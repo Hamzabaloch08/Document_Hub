@@ -1,5 +1,6 @@
 import DashboardScreen from "@/src/features/dashboard/screens/DashboardScreen";
 
-export default function HomeRoute() {
+export default function DashboardRoute() {
   return <DashboardScreen />;
 }
+

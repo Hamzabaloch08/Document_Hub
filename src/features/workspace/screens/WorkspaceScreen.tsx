@@ -33,13 +33,13 @@ export default function WorkspaceScreen() {
 
         <View className="mb-8 mt-6 flex-row gap-3">
           <Link
-            href="/(main)/dashboard"
+            href="/dashboard"
             className="rounded-xl border border-indigo-400 bg-indigo-500 px-4 py-3 font-semibold text-white"
           >
             Open Dashboard
           </Link>
           <Link
-            href="/(main)/profile"
+            href="/profile"
             className="rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 font-semibold text-slate-100"
           >
             Profile

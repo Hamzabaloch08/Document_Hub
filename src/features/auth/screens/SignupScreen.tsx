@@ -1,37 +1,67 @@
+import { AppDispatch, RootState } from "@/src/store/store";
+import { Feather } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-  View,
+  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { useDispatch, useSelector } from "react-redux";
+import { registerPayload, registerUser } from "../redux/authThunks";
 
 export default function SignupScreen() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [username, setUsername] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [signUpError, setSignUpError] = useState<string>();
+
+  const dispatch = useDispatch<AppDispatch>();
+  const { loading } = useSelector((state: RootState) => state.auth);
+
+  const payload: registerPayload = {
+    username,
+    email,
+    password,
+  };
+
+  const handleRegister = async () => {
+    setSignUpError("");
+    try {
+      const response = await dispatch(registerUser(payload)).unwrap();
+      if (response && response.success) {
+        console.log("API Response:", response);
+        router.replace("/(tabs)");
+      }
+    } catch (err: any) {
+      setSignUpError(err?.message || err || "Registration Failed");
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <ScrollView 
-        showsVerticalScrollIndicator={false} 
-        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
       >
         <View className="px-8 py-16">
           {/* Logo */}
           <View className="items-center mb-12">
-             <View className="w-12 h-12 bg-black rounded-xl items-center justify-center shadow-lg shadow-gray-200">
-                <Feather name="layers" size={24} color="white" />
-             </View>
-             <Text className="mt-4 text-2xl font-black text-black tracking-[-1px]">DocuHub.</Text>
+            <View className="w-12 h-12 bg-black rounded-xl items-center justify-center shadow-lg shadow-gray-200">
+              <Feather name="layers" size={24} color="white" />
+            </View>
+            <Text className="mt-4 text-2xl font-black text-black tracking-[-1px]">
+              DocuHub.
+            </Text>
           </View>
 
-          <Text className="text-[32px] font-black text-black leading-[38px] tracking-[-1px] text-center">Hello.</Text>
+          <Text className="text-[32px] font-black text-black leading-[38px] tracking-[-1px] text-center">
+            Hello.
+          </Text>
           <Text className="text-gray-400 text-base font-medium mt-3 text-center px-6">
             Join the elite circle of documentation experts.
           </Text>
@@ -39,20 +69,24 @@ export default function SignupScreen() {
           {/* Form - Restored Boxed Style */}
           <View className="mt-12">
             <View className="mb-5">
-              <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-[2px] mb-2 ml-1">Full Name</Text>
+              <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-[2px] mb-2 ml-1">
+                Full Name
+              </Text>
               <View className="bg-gray-50 border border-gray-100 h-14 px-5 rounded-2xl flex-row items-center">
                 <TextInput
                   className="flex-1 text-base font-bold text-black h-full"
                   placeholder="Alex Carter"
                   placeholderTextColor="#94A3B8"
-                  value={name}
-                  onChangeText={setName}
+                  value={username}
+                  onChangeText={setUsername}
                 />
               </View>
             </View>
 
             <View className="mb-5">
-              <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-[2px] mb-2 ml-1">Email address</Text>
+              <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-[2px] mb-2 ml-1">
+                Email address
+              </Text>
               <View className="bg-gray-50 border border-gray-100 h-14 px-5 rounded-2xl flex-row items-center">
                 <TextInput
                   className="flex-1 text-base font-bold text-black h-full"
@@ -66,7 +100,9 @@ export default function SignupScreen() {
             </View>
 
             <View className="mb-10">
-              <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-[2px] mb-2 ml-1">Password</Text>
+              <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-[2px] mb-2 ml-1">
+                Password
+              </Text>
               <View className="bg-gray-50 border border-gray-100 h-14 px-5 rounded-2xl flex-row items-center">
                 <TextInput
                   className="flex-1 text-base font-bold text-black h-full"
@@ -75,25 +111,47 @@ export default function SignupScreen() {
                   secureTextEntry={!showPassword}
                   value={password}
                   onChangeText={setPassword}
+                  autoCapitalize="sentences"
+                  autoCorrect={false}
+                  autoComplete="off"
+                  keyboardType={showPassword ? "visible-password" : "default"}
                 />
-                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                  <Feather name={showPassword ? "eye" : "eye-off"} size={18} color="#94A3B8" />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <Feather
+                    name={showPassword ? "eye" : "eye-off"}
+                    size={18}
+                    color="#94A3B8"
+                  />
                 </TouchableOpacity>
+              </View>
+              <View className="flex flex-row justify-between mt-1 pl-2">
+                <Text className="text-[10px] font-black text-red-500">
+                  {signUpError}
+                </Text>
               </View>
             </View>
 
             <TouchableOpacity
-              onPress={() => router.replace("/(tabs)")}
+              onPress={() => handleRegister()}
               activeOpacity={0.8}
-              className="bg-black h-14 rounded-2xl items-center justify-center shadow-lg shadow-gray-200"
+              disabled={loading}
+              className={`h-14 rounded-2xl items-center justify-center shadow-lg ${
+                loading ? "bg-gray-400 shadow-none" : "bg-black shadow-gray-200"
+              }`}
             >
-              <Text className="text-white text-[15px] font-black uppercase tracking-[2px]">Initialize Profile</Text>
+              <Text className="text-white text-[15px] font-black uppercase tracking-[2px]">
+                {loading ? "Signing Up..." : "Sign UP"}
+              </Text>
             </TouchableOpacity>
           </View>
 
           <View className="mt-12 items-center">
             <TouchableOpacity onPress={() => router.push("/login")}>
-                <Text className="text-gray-400 font-bold uppercase tracking-[1px] text-[10px]">A Member? <Text className="text-black">Login here</Text></Text>
+              <Text className="text-gray-400 font-bold uppercase tracking-[1px] text-[10px]">
+                A Member? <Text className="text-black">Login here</Text>
+              </Text>
             </TouchableOpacity>
           </View>
         </View>

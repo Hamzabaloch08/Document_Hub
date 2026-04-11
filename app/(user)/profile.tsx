@@ -1,5 +1,6 @@
 import ProfileScreen from "@/src/features/user/screens/ProfileScreen";
 
-export default function TabsProfileRoute() {
+export default function ProfileRoute() {
   return <ProfileScreen />;
 }
+
