@@ -62,7 +62,7 @@ export default function ProfileScreen() {
                 {parseData?.email || "Loading..."}
               </Text>
             </View>
-            <TouchableOpacity 
+             <TouchableOpacity 
               onPress={() => router.push("/(user)/settings")}
               className="w-10 h-10 bg-gray-50 rounded-xl items-center justify-center border border-gray-100"
             >
