@@ -2,7 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ProfileScreen() {
@@ -46,27 +46,37 @@ export default function ProfileScreen() {
         <View className="px-6 py-8">
           {/* 2. User Card - Normal Radius */}
           <View className="flex-row items-center bg-white p-6 rounded-2xl border border-gray-100 shadow-sm shadow-gray-50 mb-10">
-            <View className="w-16 h-16 bg-black items-center justify-center rounded-xl">
-              <Text className="text-white text-2xl font-black">
-                {parseData?.username
-                  ? parseData.username.substring(0, 2).toUpperCase()
-                  : "US"}
-              </Text>
+            <View className="w-16 h-16 bg-black items-center justify-center rounded-xl overflow-hidden">
+              {parseData?.image ? (
+                <Image
+                  source={{ uri: parseData.image }}
+                  style={{ width: 64, height: 64, borderRadius: 12 }}
+                />
+              ) : (
+                <Text className="text-white text-2xl font-black">
+                  {parseData?.username
+                    ? parseData.username.substring(0, 2).toUpperCase()
+                    : "US"}
+                </Text>
+              )}
             </View>
             <View className="ml-5 flex-1 pr-2">
               <Text className="text-xl font-black text-black" numberOfLines={1}>
                 {parseData?.username || "Loading..."}
               </Text>
-              <Text className="text-[10px] font-bold text-gray-400 mt-1 uppercase" numberOfLines={1}>
+              <Text
+                className="text-[12px] font-bold text-gray-400 mt-1"
+                numberOfLines={1}
+              >
                 {parseData?.role || "Loading..."} •{" "}
                 {parseData?.email || "Loading..."}
               </Text>
             </View>
-             <TouchableOpacity 
-              onPress={() => router.push("/(user)/settings")}
+            <TouchableOpacity
+              onPress={() => router.push("/(user)/edit-profile")}
               className="w-10 h-10 bg-gray-50 rounded-xl items-center justify-center border border-gray-100"
             >
-               <Feather name="edit-2" size={16} color="black" />
+              <Feather name="edit-2" size={16} color="black" />
             </TouchableOpacity>
           </View>
 
@@ -75,7 +85,7 @@ export default function ProfileScreen() {
             <View className="flex-1 bg-white border border-gray-100 p-5 rounded-2xl shadow-sm shadow-gray-50">
               <Text className="text-3xl font-black text-black">12</Text>
               <Text className="text-[10px] font-black uppercase tracking-[1px] mt-1 text-gray-400">
-                Documents
+                Workspaces
               </Text>
             </View>
             <View className="flex-1 bg-white border border-gray-100 p-5 rounded-2xl shadow-sm shadow-gray-50">
@@ -114,7 +124,10 @@ export default function ProfileScreen() {
 
           {/* 5. Log Out - Normal Radius */}
           <TouchableOpacity
-            onPress={() => router.replace("/login")}
+            onPress={async () => {
+              await AsyncStorage.clear();
+              router.replace("/(auth)/login");
+            }}
             activeOpacity={0.8}
             className="mt-12 bg-black h-14 rounded-2xl items-center justify-center shadow-lg shadow-gray-200"
           >

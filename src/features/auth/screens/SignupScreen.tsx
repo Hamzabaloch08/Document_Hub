@@ -18,10 +18,8 @@ export default function SignupScreen() {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [signUpError, setSignUpError] = useState<string>();
-
   const dispatch = useDispatch<AppDispatch>();
-  const { loading } = useSelector((state: RootState) => state.auth);
+  const { loading, error } = useSelector((state: RootState) => state.auth);
 
   const payload: registerPayload = {
     username,
@@ -30,7 +28,6 @@ export default function SignupScreen() {
   };
 
   const handleRegister = async () => {
-    setSignUpError("");
     try {
       const response = await dispatch(registerUser(payload)).unwrap();
       if (response && response.success) {
@@ -38,7 +35,7 @@ export default function SignupScreen() {
         router.replace("/(tabs)");
       }
     } catch (err: any) {
-      setSignUpError(err?.message || err || "Registration Failed");
+      console.log("Register Error:", err);
     }
   };
 
@@ -68,6 +65,15 @@ export default function SignupScreen() {
 
           {/* Form - Restored Boxed Style */}
           <View className="mt-12">
+            {error && (
+              <View className="mb-6 bg-red-50 p-4 rounded-2xl border border-red-100 flex-row items-center">
+                <Feather name="alert-circle" size={18} color="#EF4444" />
+                <Text className="text-red-600 text-sm font-bold ml-3 flex-1">
+                  {error}
+                </Text>
+              </View>
+            )}
+
             <View className="mb-5">
               <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-[2px] mb-2 ml-1">
                 Full Name
@@ -126,11 +132,7 @@ export default function SignupScreen() {
                   />
                 </TouchableOpacity>
               </View>
-              <View className="flex flex-row justify-between mt-1 pl-2">
-                <Text className="text-[10px] font-black text-red-500">
-                  {signUpError}
-                </Text>
-              </View>
+
             </View>
 
             <TouchableOpacity

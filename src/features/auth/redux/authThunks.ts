@@ -1,6 +1,6 @@
 import api from "@/src/config/apiClient";
-import { createAsyncThunk } from "@reduxjs/toolkit";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createAsyncThunk } from "@reduxjs/toolkit";
 
 export interface loginPayload {
   email: string;
@@ -45,40 +45,6 @@ export interface registerResponse {
   final: User;
 }
 
-export const loginUser = createAsyncThunk<
-  loginResponse,
-  loginPayload,
-  { rejectValue: string }
->("user/login", async (credentials, { rejectWithValue }) => {
-  try {
-    const response = await api.post("user/login", credentials);
-    const profileData = response?.data?.user;
-    if (profileData) {
-      await AsyncStorage.setItem("user", JSON.stringify(profileData));
-    }
-    return response.data;
-  } catch (error: any) {
-    return rejectWithValue(error.response?.data?.message || "Login Failed");
-  }
-});
-
-export const registerUser = createAsyncThunk<
-  registerResponse,
-  registerPayload,
-  { rejectValue: string }
->("user/register", async (credentials, { rejectWithValue }) => {
-  try {
-    const response = await api.post("user/register", credentials);
-    return response.data;
-  } catch (error: any) {
-    return rejectWithValue(
-      error.response?.data?.message || "Registration Failed",
-    );
-  }
-});
-
-// --- FORGOT & RESET PASSWORD THUNKS ---
-
 export interface forgetPasswordPayload {
   email: string;
 }
@@ -99,6 +65,59 @@ export interface genericResponse {
   success: boolean;
 }
 
+export interface updateProfileResponse {
+  message: string;
+  success: boolean;
+  updateData: User;
+}
+
+export interface updateProfilePayload {
+  username?: string;
+  bio?: string;
+  imageUri?: string | null;
+}
+
+// ─── Login ────────────────────────────────────────────────────────────────────
+export const loginUser = createAsyncThunk<
+  loginResponse,
+  loginPayload,
+  { rejectValue: string }
+>("user/login", async (credentials, { rejectWithValue }) => {
+  try {
+    const response = await api.post("user/login", credentials);
+    const data = response.data;
+
+    // Persist auth data
+    if (data?.user) {
+      await AsyncStorage.setItem("user", JSON.stringify(data.user));
+    }
+    await AsyncStorage.setItem("token", String(data?.user?.token ?? ""));
+    await AsyncStorage.setItem("tokenGenerate", String(data?.tokenGenerate ?? ""));
+    await AsyncStorage.setItem("refreshToken", String(data?.refreshToken ?? ""));
+
+    return data;
+  } catch (error: any) {
+    return rejectWithValue(error.response?.data?.message || "Login Failed");
+  }
+});
+
+// ─── Register ─────────────────────────────────────────────────────────────────
+export const registerUser = createAsyncThunk<
+  registerResponse,
+  registerPayload,
+  { rejectValue: string }
+>("user/register", async (credentials, { rejectWithValue }) => {
+  try {
+    const response = await api.post("user/register", credentials);
+    return response.data;
+  } catch (error: any) {
+    return rejectWithValue(
+      error.response?.data?.message || "Registration Failed",
+    );
+  }
+});
+
+// ─── Forgot Password ──────────────────────────────────────────────────────────
 export const forgetPasswordUser = createAsyncThunk<
   genericResponse,
   forgetPasswordPayload,
@@ -114,14 +133,15 @@ export const forgetPasswordUser = createAsyncThunk<
   }
 });
 
+// ─── Verify OTP ───────────────────────────────────────────────────────────────
 export const verifyOtpUser = createAsyncThunk<
   genericResponse,
   verifyOtpPayload,
   { rejectValue: string }
 >("user/verifyOtp", async ({ email, otp }, { rejectWithValue }) => {
   try {
-    const encodedEmail = encodeURIComponent(email);
-    const response = await api.post(`user/verifyOtp/${encodedEmail}`, { otp });
+    const encoded = encodeURIComponent(email);
+    const response = await api.post(`user/verifyOtp/${encoded}`, { otp });
     return response.data;
   } catch (error: any) {
     return rejectWithValue(
@@ -130,6 +150,7 @@ export const verifyOtpUser = createAsyncThunk<
   }
 });
 
+// ─── Change Password ──────────────────────────────────────────────────────────
 export const changePasswordUser = createAsyncThunk<
   genericResponse,
   changePasswordPayload,
@@ -138,14 +159,69 @@ export const changePasswordUser = createAsyncThunk<
   "user/changePassword",
   async ({ email, newPassword, confirmPassword }, { rejectWithValue }) => {
     try {
-      const encodedEmail = encodeURIComponent(email);
-      const response = await api.post(`user/changePassword/${encodedEmail}`, {
+      const encoded = encodeURIComponent(email);
+      const response = await api.post(`user/changePassword/${encoded}`, {
         newPassword,
         confirmPassword,
       });
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data);
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to change password",
+      );
     }
   },
 );
+
+// ─── Update Profile ───────────────────────────────────────────────────────────
+export const updateProfile = createAsyncThunk<
+  updateProfileResponse,
+  updateProfilePayload,
+  { rejectValue: string }
+>("user/updateProfile", async (payload, { rejectWithValue }) => {
+  try {
+    const userDataStr = await AsyncStorage.getItem("user");
+    const userData = userDataStr ? JSON.parse(userDataStr) : null;
+
+    const updateFields = {
+      username: (payload.username || userData?.username || "").trim(),
+      bio: (payload.bio || userData?.bio || "").trim(),
+    };
+
+    const formData = new FormData();
+    Object.entries(updateFields).forEach(([key, value]) => {
+      formData.append(key, value);
+    });
+
+    const hasNewLocalImage = Boolean(
+      payload.imageUri && !payload.imageUri.startsWith("http"),
+    );
+
+    if (hasNewLocalImage && payload.imageUri) {
+      formData.append("image", {
+        uri: payload.imageUri,
+        name: "profile.jpg",
+        type: "image/jpeg",
+      } as any);
+    }
+
+    // Note: multipart/form-data — apiClient interceptor adds auth headers automatically
+    const response = await api.put("user/update-profile", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    if (response.data.success) {
+      const current = await AsyncStorage.getItem("user");
+      if (current) {
+        const merged = { ...JSON.parse(current), ...response.data.updateData };
+        await AsyncStorage.setItem("user", JSON.stringify(merged));
+      }
+    }
+
+    return response.data;
+  } catch (error: any) {
+    return rejectWithValue(
+      error?.response?.data?.message || "Failed to update profile.",
+    );
+  }
+});

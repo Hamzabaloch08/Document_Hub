@@ -18,9 +18,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loginError, setloginError] = useState<string>("");
-
-  const { loading } = useSelector((state: RootState) => state.auth);
+  const { loading, error } = useSelector((state: RootState) => state.auth);
 
   const dispatch = useDispatch<AppDispatch>();
 
@@ -33,8 +31,6 @@ export default function LoginScreen() {
     try {
       const response = await dispatch(loginUser(payload)).unwrap();
       if (response.success) {
-        console.log(loginError);
-
         console.log("API Response:", response);
         const storedUser = await AsyncStorage.getItem("user");
         console.log(
@@ -45,9 +41,7 @@ export default function LoginScreen() {
         router.replace("/(tabs)");
         return;
       }
-      throw new Error(response.message);
     } catch (err: any) {
-      setloginError(err?.message);
       console.log("Login Error:", err);
     }
   };
@@ -78,6 +72,15 @@ export default function LoginScreen() {
 
           {/* Form - Restored Boxed Style */}
           <View className="mt-12">
+            {error && (
+              <View className="mb-6 bg-red-50 p-4 rounded-2xl border border-red-100 flex-row items-center">
+                <Feather name="alert-circle" size={18} color="#EF4444" />
+                <Text className="text-red-600 text-sm font-bold ml-3 flex-1">
+                  {error}
+                </Text>
+              </View>
+            )}
+
             <View className="mb-5">
               <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-[2px] mb-2 ml-1">
                 Email address
@@ -121,14 +124,10 @@ export default function LoginScreen() {
                   />
                 </TouchableOpacity>
               </View>
-              <View className="flex flex-row justify-between mt-1 pl-2">
-                <Text className="text-[10px] font-black text-red-500">
-                  {loginError}
-                </Text>
+              <View className="flex flex-row justify-end mt-2 pr-1">
                 {/* Forgot Password Link - RIGHT SIDE */}
                 <TouchableOpacity
                   onPress={() => router.push("/(auth)/forgot-password")}
-                  className="pr-1"
                 >
                   <Text className="text-[10px] font-black text-black uppercase tracking-[1px]">
                     Forgot Password?

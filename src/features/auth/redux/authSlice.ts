@@ -1,11 +1,12 @@
 import { createSlice } from "@reduxjs/toolkit";
 import {
-  changePasswordUser,
-  forgetPasswordUser,
-  loginUser,
-  registerUser,
-  User,
-  verifyOtpUser,
+    changePasswordUser,
+    forgetPasswordUser,
+    loginUser,
+    registerUser,
+    updateProfile,
+    User,
+    verifyOtpUser,
 } from "./authThunks";
 
 export interface AuthState {
@@ -87,6 +88,7 @@ const authSlice = createSlice({
       .addCase(verifyOtpUser.pending, (state) => {
         state.loading = true;
         state.error = null;
+        state.success = false;
       })
       .addCase(verifyOtpUser.fulfilled, (state) => {
         state.loading = false;
@@ -95,9 +97,29 @@ const authSlice = createSlice({
       .addCase(verifyOtpUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || "OTP verification failed";
+        state.success = false;
       })
 
-      // --- Change Password ---
+      // --- Update Profile ---
+      .addCase(updateProfile.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.success = false;
+      })
+      .addCase(updateProfile.fulfilled, (state, action) => {
+        state.loading = false;
+        state.success = true;
+        if (state.user) {
+          state.user = { ...state.user, ...action.payload.updateData };
+        } else {
+          state.user = action.payload.updateData;
+        }
+      })
+      .addCase(updateProfile.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || "Profile update failed";
+        state.success = false;
+      })
       .addCase(changePasswordUser.pending, (state) => {
         state.loading = true;
         state.error = null;
