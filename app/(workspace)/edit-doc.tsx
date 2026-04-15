@@ -1,27 +1,30 @@
 import {
-  createDocument,
-  updateDocument,
+    createDocument,
+    updateDocument,
 } from "@/src/features/document/redux/documentThunks";
-import { DocumentItem, DocumentVisibility } from "@/src/features/document/types/documentTypes";
+import {
+    DocumentItem,
+    DocumentVisibility,
+} from "@/src/features/document/types/documentTypes";
 import { AppDispatch, RootState } from "@/src/store/store";
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import {
-  RichEditor,
-  RichToolbar,
-  actions,
+    RichEditor,
+    RichToolbar,
+    actions,
 } from "react-native-pell-rich-editor";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
@@ -37,7 +40,9 @@ export default function EditDocScreen() {
   }>();
 
   const isEditing = !!params.docId;
-  const { actionLoading, workspaceDocuments } = useSelector((s: RootState) => s.document);
+  const { actionLoading, workspaceDocuments } = useSelector(
+    (s: RootState) => s.document,
+  );
 
   const { workspaces } = useSelector((s: RootState) => s.workspace);
 
@@ -51,7 +56,7 @@ export default function EditDocScreen() {
   const [title, setTitle] = useState(params.title || "");
   const [content, setContent] = useState(existingDoc?.content || "");
   const [visibility, setVisibility] = useState<DocumentVisibility>(
-    (params.visibility as DocumentVisibility) || "private"
+    (params.visibility as DocumentVisibility) || "private",
   );
 
   const editorRef = useRef<RichEditor>(null);
@@ -75,7 +80,7 @@ export default function EditDocScreen() {
         updateDocument({
           id: params.docId,
           data: { title: trimmedTitle, content, visibility },
-        })
+        }),
       );
     } else if (targetWsId) {
       result = await dispatch(
@@ -84,12 +89,23 @@ export default function EditDocScreen() {
           title: trimmedTitle,
           content,
           visibility,
-        })
+        }),
       );
     }
 
-    if (updateDocument.fulfilled.match(result) || createDocument.fulfilled.match(result)) {
+    if (
+      updateDocument.fulfilled.match(result) ||
+      createDocument.fulfilled.match(result)
+    ) {
       nav.back();
+    } else if (
+      updateDocument.rejected.match(result) ||
+      createDocument.rejected.match(result)
+    ) {
+      Alert.alert(
+        "Error",
+        result.payload?.message || "Failed to save document. Please try again.",
+      );
     }
   };
 
@@ -140,31 +156,40 @@ export default function EditDocScreen() {
       >
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
           <View className="px-6 py-6 pb-20">
-            
             {/* Workspace Selector (only for create) */}
             {!isEditing && (
               <>
                 <Text className="text-[10px] font-black text-gray-400 uppercase tracking-[1.5px] mb-3 ml-1">
                   Destination Workspace
                 </Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-8">
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  className="mb-8"
+                >
                   {workspaces.map((ws) => (
                     <TouchableOpacity
                       key={ws._id}
                       onPress={() => setSelectedWsId(ws._id)}
                       className={`mr-3 px-4 py-2.5 rounded-2xl border ${
-                        selectedWsId === ws._id ? "bg-black border-black" : "bg-white border-gray-100"
+                        selectedWsId === ws._id
+                          ? "bg-black border-black"
+                          : "bg-white border-gray-100"
                       }`}
                     >
-                      <Text className={`text-[10px] font-black uppercase tracking-[1px] ${
-                        selectedWsId === ws._id ? "text-white" : "text-black"
-                      }`}>
+                      <Text
+                        className={`text-[10px] font-black uppercase tracking-[1px] ${
+                          selectedWsId === ws._id ? "text-white" : "text-black"
+                        }`}
+                      >
                         {ws.name}
                       </Text>
                     </TouchableOpacity>
                   ))}
                   {workspaces.length === 0 && (
-                    <Text className="text-xs font-bold text-gray-300 italic">No workspaces available</Text>
+                    <Text className="text-xs font-bold text-gray-300 italic">
+                      No workspaces available
+                    </Text>
                   )}
                 </ScrollView>
               </>
@@ -193,7 +218,9 @@ export default function EditDocScreen() {
                   key={v}
                   onPress={() => setVisibility(v)}
                   className={`flex-1 py-3.5 rounded-2xl border items-center ${
-                    visibility === v ? "bg-black border-black" : "bg-white border-gray-200"
+                    visibility === v
+                      ? "bg-black border-black"
+                      : "bg-white border-gray-200"
                   }`}
                 >
                   <Text
@@ -211,7 +238,7 @@ export default function EditDocScreen() {
             <Text className="text-[10px] font-black text-gray-400 uppercase tracking-[1.5px] mb-3 ml-1">
               Content Editor
             </Text>
-            <View className="border border-gray-100 rounded-3xl overflow-hidden bg-white shadow-sm shadow-gray-50">
+            <View className="border border-gray-100 rounded-3xl overflow-hidden bg-white shadow-sm">
               <RichToolbar
                 editor={editorRef}
                 actions={[
@@ -226,7 +253,11 @@ export default function EditDocScreen() {
                   actions.undo,
                   actions.redo,
                 ]}
-                style={{ backgroundColor: "#F8FAFC", borderBottomWidth: 1, borderColor: "#F1F5F9" }}
+                style={{
+                  backgroundColor: "#F8FAFC",
+                  borderBottomWidth: 1,
+                  borderColor: "#F1F5F9",
+                }}
               />
               <RichEditor
                 ref={editorRef}
@@ -236,7 +267,8 @@ export default function EditDocScreen() {
                 style={{ minHeight: 400 }}
                 editorStyle={{
                   backgroundColor: "#FFFFFF",
-                  contentCSSText: "font-size: 16px; min-height: 400px; padding: 20px;",
+                  contentCSSText:
+                    "font-size: 16px; min-height: 400px; padding: 20px;",
                 }}
               />
             </View>
