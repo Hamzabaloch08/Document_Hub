@@ -1,14 +1,14 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../../config/apiClient";
 import {
-  AddWorkspaceMemberPayload,
-  CreateWorkspacePayload,
-  RemoveWorkspaceMemberPayload,
-  UpdateWorkspacePayload,
-  Workspace,
-  WorkspaceDetailsResponse,
-  WorkspaceResponse,
-  WorkspacesResponse,
+    AddWorkspaceMemberPayload,
+    CreateWorkspacePayload,
+    RemoveWorkspaceMemberPayload,
+    UpdateWorkspacePayload,
+    Workspace,
+    WorkspaceDetailsResponse,
+    WorkspaceResponse,
+    WorkspacesResponse,
 } from "../types/workspaceTypes";
 
 const getErrorMessage = (error: any, fallback: string): string => {
@@ -20,8 +20,9 @@ const getErrorMessage = (error: any, fallback: string): string => {
   return data?.message || data?.error || error?.message || fallback;
 };
 
-const extractWorkspaces = (data: Workspace[] | WorkspacesResponse): Workspace[] =>
-  Array.isArray(data) ? data : (data?.workspaces ?? []);
+const extractWorkspaces = (
+  data: Workspace[] | WorkspacesResponse,
+): Workspace[] => (Array.isArray(data) ? data : (data?.workspaces ?? []));
 
 // ─── Fetch User Workspaces ────────────────────────────────────────────────────
 // Backend returns only the workspaces the authenticated user can access
@@ -32,10 +33,14 @@ export const fetchUserWorkspaces = createAsyncThunk<
   { rejectValue: string }
 >("workspace/fetchUserWorkspaces", async (_, { rejectWithValue }) => {
   try {
-    const response = await api.get<Workspace[] | WorkspacesResponse>("/api/workspace");
+    const response = await api.get<Workspace[] | WorkspacesResponse>(
+      "/api/workspace",
+    );
     return extractWorkspaces(response.data);
   } catch (error: any) {
-    return rejectWithValue(getErrorMessage(error, "Failed to fetch workspaces"));
+    return rejectWithValue(
+      getErrorMessage(error, "Failed to fetch workspaces"),
+    );
   }
 });
 
@@ -46,10 +51,15 @@ export const createWorkspace = createAsyncThunk<
   { rejectValue: string }
 >("workspace/createWorkspace", async (payload, { rejectWithValue }) => {
   try {
-    const response = await api.post<WorkspaceResponse>("/api/workspace", payload);
+    const response = await api.post<WorkspaceResponse>(
+      "/api/workspace",
+      payload,
+    );
     return response.data.workspace;
   } catch (error: any) {
-    return rejectWithValue(getErrorMessage(error, "Failed to create workspace"));
+    return rejectWithValue(
+      getErrorMessage(error, "Failed to create workspace"),
+    );
   }
 });
 
@@ -60,10 +70,14 @@ export const fetchWorkspaceById = createAsyncThunk<
   { rejectValue: string }
 >("workspace/fetchWorkspaceById", async (id, { rejectWithValue }) => {
   try {
-    const response = await api.get<WorkspaceDetailsResponse>(`/api/workspace/${id}`);
+    const response = await api.get<WorkspaceDetailsResponse>(
+      `/api/workspace/${id}`,
+    );
     return response.data;
   } catch (error: any) {
-    return rejectWithValue(getErrorMessage(error, "Failed to fetch workspace details"));
+    return rejectWithValue(
+      getErrorMessage(error, "Failed to fetch workspace details"),
+    );
   }
 });
 
@@ -88,7 +102,9 @@ export const removeWorkspaceMember = createAsyncThunk<
   { rejectValue: string }
 >("workspace/removeWorkspaceMember", async (payload, { rejectWithValue }) => {
   try {
-    const response = await api.delete("/api/workspace/remove-member", { data: payload });
+    const response = await api.delete("/api/workspace/remove-member", {
+      data: payload,
+    });
     return response.data?.message || "Member removed successfully";
   } catch (error: any) {
     return rejectWithValue(getErrorMessage(error, "Failed to remove member"));
@@ -102,10 +118,15 @@ export const updateWorkspace = createAsyncThunk<
   { rejectValue: string }
 >("workspace/updateWorkspace", async ({ id, data }, { rejectWithValue }) => {
   try {
-    const response = await api.put<WorkspaceResponse>(`/api/workspace/${id}`, data);
+    const response = await api.put<WorkspaceResponse>(
+      `/api/workspace/${id}`,
+      data,
+    );
     return response.data.workspace;
   } catch (error: any) {
-    return rejectWithValue(getErrorMessage(error, "Failed to update workspace"));
+    return rejectWithValue(
+      getErrorMessage(error, "Failed to update workspace"),
+    );
   }
 });
 
@@ -119,6 +140,8 @@ export const deleteWorkspace = createAsyncThunk<
     const response = await api.delete(`/api/workspace/${id}`);
     return { id, message: response.data?.message || "Workspace deleted" };
   } catch (error: any) {
-    return rejectWithValue(getErrorMessage(error, "Failed to delete workspace"));
+    return rejectWithValue(
+      getErrorMessage(error, "Failed to delete workspace"),
+    );
   }
 });

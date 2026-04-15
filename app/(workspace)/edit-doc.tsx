@@ -1,6 +1,7 @@
 import {
     createDocument,
     updateDocument,
+    fetchWorkspaceDocuments,
 } from "@/src/features/document/redux/documentThunks";
 import {
     DocumentItem,
@@ -9,7 +10,8 @@ import {
 import { AppDispatch, RootState } from "@/src/store/store";
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useRef, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -39,27 +41,69 @@ export default function EditDocScreen() {
     visibility?: string;
   }>();
 
+  // ALL HOOKS BEFORE ANY CONDITIONALS
+  const [userRole, setUserRole] = useState<"admin" | "editor" | "viewer">("viewer");
   const isEditing = !!params.docId;
   const { actionLoading, workspaceDocuments } = useSelector(
     (s: RootState) => s.document,
   );
-
   const { workspaces } = useSelector((s: RootState) => s.workspace);
+  const [selectedWsId, setSelectedWsId] = useState(params.workspaceId || "");
+  const [title, setTitle] = useState(params.title || "");
+  const [content, setContent] = useState("");
+  const [visibility, setVisibility] = useState<DocumentVisibility>("private");
+  const [status, setStatus] = useState<"draft" | "published">("draft");
+  const editorRef = useRef<RichEditor>(null);
 
   // Derive content from Redux when editing (avoids passing large HTML as a route param)
   const existingDoc: DocumentItem | undefined = params.docId
     ? workspaceDocuments.find((d) => d._id === params.docId)
     : undefined;
 
-  // Form state
-  const [selectedWsId, setSelectedWsId] = useState(params.workspaceId || "");
-  const [title, setTitle] = useState(params.title || "");
-  const [content, setContent] = useState(existingDoc?.content || "");
-  const [visibility, setVisibility] = useState<DocumentVisibility>(
-    (params.visibility as DocumentVisibility) || "private",
-  );
+  // Initialize content from existing doc
+  useEffect(() => {
+    if (existingDoc?.content) {
+      setContent(existingDoc.content);
+    }
+  }, [existingDoc?.content]);
 
-  const editorRef = useRef<RichEditor>(null);
+  // Initialize visibility from existing doc
+  useEffect(() => {
+    if (existingDoc?.visibility) {
+      setVisibility(existingDoc.visibility as DocumentVisibility);
+    }
+    if (existingDoc?.title) {
+      setTitle(existingDoc.title);
+    }
+    if (existingDoc?.status) {
+      setStatus(existingDoc.status as "draft" | "published");
+    }
+  }, [existingDoc?.visibility, existingDoc?.title, existingDoc?.status]);
+
+  useEffect(() => {
+    AsyncStorage.getItem("user").then((raw) => {
+      if (!raw) return;
+      try {
+        const u = JSON.parse(raw);
+        const r = (u?.role || "viewer").toLowerCase();
+        if (r === "admin" || r === "editor" || r === "viewer") {
+          setUserRole(r as any);
+        }
+      } catch {}
+    });
+  }, []);
+
+  if (userRole === "viewer") {
+    return (
+      <SafeAreaView className="flex-1 bg-white items-center justify-center">
+        <Text className="text-lg font-black text-black">Access Denied</Text>
+        <Text className="text-gray-500 mt-2">Viewers cannot edit documents</Text>
+        <TouchableOpacity onPress={() => nav.back()} className="mt-6 px-6 py-3 bg-black rounded-2xl">
+          <Text className="text-white font-bold">Go Back</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
 
   const handleSave = async () => {
     const trimmedTitle = title.trim();
@@ -79,7 +123,7 @@ export default function EditDocScreen() {
       result = await dispatch(
         updateDocument({
           id: params.docId,
-          data: { title: trimmedTitle, content, visibility },
+          data: { title: trimmedTitle, content, visibility, status },
         }),
       );
     } else if (targetWsId) {
@@ -89,6 +133,7 @@ export default function EditDocScreen() {
           title: trimmedTitle,
           content,
           visibility,
+          status,
         }),
       );
     }
@@ -97,7 +142,14 @@ export default function EditDocScreen() {
       updateDocument.fulfilled.match(result) ||
       createDocument.fulfilled.match(result)
     ) {
-      nav.back();
+      if (!isEditing && targetWsId) {
+        // After creating, go directly to workspace or drafts based on status
+        await dispatch(fetchWorkspaceDocuments(targetWsId));
+        nav.replace(`/(workspace)/detail?id=${targetWsId}`);
+      } else {
+        // After editing, go back
+        nav.back();
+      }
     } else if (
       updateDocument.rejected.match(result) ||
       createDocument.rejected.match(result)
@@ -113,14 +165,7 @@ export default function EditDocScreen() {
     <SafeAreaView className="flex-1 bg-white" edges={["top", "bottom"]}>
       {/* Header */}
       <View className="px-6 py-4 border-b border-gray-50 flex-row items-center justify-between bg-white">
-        <View className="flex-row items-center gap-4">
-          <TouchableOpacity
-            onPress={() => nav.back()}
-            className="w-10 h-10 bg-gray-50 rounded-2xl items-center justify-center border border-gray-100"
-          >
-            <Feather name="chevron-left" size={20} color="black" />
-          </TouchableOpacity>
-          <View>
+        <View>
             <Text className="text-[10px] font-black text-gray-300 uppercase tracking-[2px]">
               {isEditing ? "Modify" : "Compose"}
             </Text>
@@ -128,26 +173,6 @@ export default function EditDocScreen() {
               {isEditing ? "Edit Doc." : "New Document."}
             </Text>
           </View>
-        </View>
-
-        <TouchableOpacity
-          onPress={handleSave}
-          disabled={actionLoading}
-          className={`px-6 py-3 rounded-2xl items-center flex-row gap-2 ${
-            actionLoading ? "bg-gray-100" : "bg-black"
-          }`}
-        >
-          {actionLoading ? (
-            <ActivityIndicator color="#000" size="small" />
-          ) : (
-            <>
-              <Text className="text-white font-black uppercase tracking-[1px] text-xs">
-                Save
-              </Text>
-              <Feather name="check" size={14} color="white" />
-            </>
-          )}
-        </TouchableOpacity>
       </View>
 
       <KeyboardAvoidingView
@@ -156,8 +181,8 @@ export default function EditDocScreen() {
       >
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
           <View className="px-6 py-6 pb-20">
-            {/* Workspace Selector (only for create) */}
-            {!isEditing && (
+            {/* Workspace Selector (only when creating without workspace context) */}
+            {!isEditing && !params.workspaceId && (
               <>
                 <Text className="text-[10px] font-black text-gray-400 uppercase tracking-[1.5px] mb-3 ml-1">
                   Destination Workspace
@@ -234,6 +259,7 @@ export default function EditDocScreen() {
               ))}
             </View>
 
+            {/* Editing: Show Status Toggle */}
             {/* Editor Toolbar */}
             <Text className="text-[10px] font-black text-gray-400 uppercase tracking-[1.5px] mb-3 ml-1">
               Content Editor
@@ -270,10 +296,68 @@ export default function EditDocScreen() {
                   contentCSSText:
                     "font-size: 16px; min-height: 400px; padding: 20px;",
                 }}
+                useContainer={true}
+                startZoomSupportWebView={false}
               />
             </View>
           </View>
         </ScrollView>
+
+        {/* Dual Save Buttons at Bottom */}
+        <View className="px-6 py-4 border-t border-gray-50 bg-white flex-row gap-3">
+          <TouchableOpacity
+            onPress={() => nav.back()}
+            className="w-12 h-12 bg-gray-100 rounded-2xl items-center justify-center"
+          >
+            <Feather name="x" size={20} color="black" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={async () => {
+              setStatus("draft");
+              await handleSave();
+            }}
+            disabled={actionLoading}
+            className={`flex-1 py-3 rounded-2xl items-center flex-row gap-2 border-2 ${
+              actionLoading
+                ? "bg-gray-100 border-gray-200"
+                : "bg-white border-gray-200"
+            }`}
+          >
+            {actionLoading ? (
+              <ActivityIndicator color="#000" size="small" />
+            ) : (
+              <>
+                <Feather name="save" size={16} color="black" />
+                <Text className="text-black font-black uppercase tracking-[1px] text-xs">
+                  Draft
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={async () => {
+              setStatus("published");
+              await handleSave();
+            }}
+            disabled={actionLoading}
+            className={`flex-1 py-3 rounded-2xl items-center flex-row gap-2 ${
+              actionLoading ? "bg-gray-300" : "bg-black"
+            }`}
+          >
+            {actionLoading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <>
+                <Feather name="send" size={16} color="white" />
+                <Text className="text-white font-black uppercase tracking-[1px] text-xs">
+                  Publish
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

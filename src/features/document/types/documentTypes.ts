@@ -18,6 +18,7 @@ export interface DocumentItem {
   content: string;
   workspaceId: string | DocumentWorkspaceRef;
   visibility: DocumentVisibility;
+  status?: "draft" | "published";
   createdAt?: string;
   updatedAt?: string;
   authorId?: string | DocumentAuthorRef;
@@ -38,11 +39,12 @@ export interface CreateDocumentPayload {
   title: string;
   content: string;
   visibility?: DocumentVisibility;
+  status?: "draft" | "published";
 }
 
 export interface UpdateDocumentPayload {
   id: string;
-  data: Partial<Pick<DocumentItem, "title" | "content" | "visibility">>;
+  data: Partial<Pick<DocumentItem, "title" | "content" | "visibility">> & { status?: "draft" | "published" };
 }
 
 export interface SearchPublicDocumentsPayload {

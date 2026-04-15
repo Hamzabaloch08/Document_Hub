@@ -27,9 +27,7 @@ import {
 } from "../redux/workspaceSlice";
 import {
     addWorkspaceMember,
-    fetchWorkspaceById,
-    removeWorkspaceMember,
-    updateWorkspace
+    fetchWorkspaceById
 } from "../redux/workspaceThunks";
 
 // ── HTML Content Wrapper ──
@@ -48,7 +46,7 @@ const buildHtml = (content: string) => `
 <body>${content || "<p style='color:#999'>No content.</p>"}</body>
 </html>`;
 
-export default function WorkspaceDetailScreen() {
+export default function WorkspaceScreen() {
   const dispatch = useDispatch<AppDispatch>();
   const nav = useRouter();
   const { id: workspaceId } = useLocalSearchParams<{ id: string }>();
@@ -67,8 +65,6 @@ export default function WorkspaceDetailScreen() {
   const [viewingDocId, setViewingDocId] = useState<string | null>(null);
   const [memberEmail, setMemberEmail] = useState("");
   const [showMembers, setShowMembers] = useState(false);
-  const [editingVisibility, setEditingVisibility] = useState(false);
-  const [newVisibility, setNewVisibility] = useState<"public" | "private">("private");
 
   // ── Hydrate User ──
   useEffect(() => {
@@ -88,13 +84,6 @@ export default function WorkspaceDetailScreen() {
       dispatch(clearWorkspaceDocuments());
     };
   }, [workspaceId]);
-
-  // ── Sync Visibility ──
-  useEffect(() => {
-    if (selectedWorkspace?.visibility) {
-      setNewVisibility(selectedWorkspace.visibility as "public" | "private");
-    }
-  }, [selectedWorkspace?.visibility]);
 
   // ── Role Logic ──
   const userRole = useMemo(() => {
@@ -138,23 +127,6 @@ export default function WorkspaceDetailScreen() {
     ]);
   };
 
-  const handleUpdateVisibility = async () => {
-    if (newVisibility === selectedWorkspace?.visibility) {
-      setEditingVisibility(false);
-      return;
-    }
-    const result = await dispatch(
-      updateWorkspace({
-        id: workspaceId!,
-        data: { visibility: newVisibility },
-      }),
-    );
-    if (updateWorkspace.fulfilled.match(result)) {
-      setEditingVisibility(false);
-      dispatch(fetchWorkspaceById(workspaceId!));
-    }
-  };
-
   if (!workspaceId) return null;
 
   return (
@@ -191,139 +163,26 @@ export default function WorkspaceDetailScreen() {
               "A workspace for your brilliant ideas and shared documents."}
           </Text>
 
-          {/* ── Visibility Editor (Admin Only) ── */}
-          {isAdmin && (
-            <View className="mt-5 flex-row items-center gap-2">
-              {editingVisibility ? (
-                <View className="flex-row gap-2 flex-1">
-                  <TouchableOpacity
-                    onPress={() => setNewVisibility("private")}
-                    className={`flex-1 py-2.5 rounded-lg items-center justify-center border-2 ${
-                      newVisibility === "private"
-                        ? "bg-black border-black"
-                        : "bg-gray-50 border-gray-100"
-                    }`}
-                  >
-                    <Text
-                      className={`text-xs font-black uppercase ${
-                        newVisibility === "private" ? "text-white" : "text-black"
-                      }`}
-                    >
-                      Private
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => setNewVisibility("public")}
-                    className={`flex-1 py-2.5 rounded-lg items-center justify-center border-2 ${
-                      newVisibility === "public"
-                        ? "bg-black border-black"
-                        : "bg-gray-50 border-gray-100"
-                    }`}
-                  >
-                    <Text
-                      className={`text-xs font-black uppercase ${
-                        newVisibility === "public" ? "text-white" : "text-black"
-                      }`}
-                    >
-                      Public
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={handleUpdateVisibility}
-                    disabled={actionLoading}
-                    className="w-10 h-10 items-center justify-center bg-black rounded-lg"
-                  >
-                    <Feather name="check" size={16} color="white" />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => setEditingVisibility(false)}
-                    className="w-10 h-10 items-center justify-center bg-gray-50 rounded-lg"
-                  >
-                    <Feather name="x" size={16} color="black" />
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <TouchableOpacity
-                  onPress={() => setEditingVisibility(true)}
-                  className="flex-row items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"
-                >
-                  <Feather
-                    name={selectedWorkspace?.visibility === "public" ? "globe" : "lock"}
-                    size={14}
-                    color="black"
-                  />
-                  <Text className="text-xs font-black uppercase">
-                    {selectedWorkspace?.visibility || "private"}
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
+          {/* ── Stats Bar ── */}
           <View className="flex-row items-center gap-6 mt-8 py-6 border-y border-gray-50">
-            <View className="flex-row items-center gap-2">
+            <TouchableOpacity
+              onPress={() => setShowMembers(!showMembers)}
+              className="flex-row items-center gap-2"
+            >
               <View className="w-8 h-8 items-center justify-center bg-gray-50 rounded-lg">
                 <Feather name="users" size={14} color="black" />
               </View>
               <Text className="text-sm font-black text-black">
-                {selectedWorkspaceMembers.length}
+                {selectedWorkspaceMembers.length} Members
               </Text>
-            </View>
+            </TouchableOpacity>
             <View className="flex-row items-center gap-2">
               <View className="w-8 h-8 items-center justify-center bg-gray-50 rounded-lg">
                 <Feather name="folder" size={14} color="black" />
               </View>
               <Text className="text-sm font-black text-black">
-                {workspaceDocuments.length}
+                {workspaceDocuments.length} Documents
               </Text>
-            </View>
-          </View>
-
-          {/* ── Team Members Section ── */}
-          <View className="mt-8">
-            <Text className="text-[12px] font-black text-gray-300 uppercase tracking-[3px] mb-4">Team</Text>
-            <View className="gap-2">
-              {selectedWorkspaceMembers.map((member) => (
-                <View
-                  key={member._id}
-                  className="bg-gray-50 px-4 py-3 rounded-xl flex-row items-center justify-between border border-gray-100"
-                >
-                  <View className="flex-1">
-                    <Text className="text-sm font-bold text-black">
-                      {member.userId?.name || "Unknown"}
-                    </Text>
-                    <Text className="text-xs text-gray-400 mt-1">
-                      {member.userId?.email || "No email"}
-                    </Text>
-                  </View>
-                  <View className="flex-row items-center gap-2 ml-3">
-                    <View className="bg-black px-2.5 py-1 rounded-full">
-                      <Text className="text-white text-[8px] font-bold uppercase">{member.role}</Text>
-                    </View>
-                    {isAdmin && member.role !== "admin" && (
-                      <TouchableOpacity
-                        onPress={() => {
-                          Alert.alert("Remove", `Remove ${member.userId?.name}?`, [
-                            { text: "Cancel" },
-                            {
-                              text: "Remove",
-                              style: "destructive",
-                              onPress: async () => {
-                                const memberId = typeof member.userId === 'string' ? member.userId : member.userId?._id;
-                                await dispatch(removeWorkspaceMember({ workspaceId: workspaceId!, userId: memberId }));
-                                dispatch(fetchWorkspaceById(workspaceId!));
-                              }
-                            }
-                          ]);
-                        }}
-                        disabled={actionLoading}
-                        className="w-8 h-8 items-center justify-center bg-red-50 rounded-lg"
-                      >
-                        <Feather name="x" size={14} color="#EF4444" />
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </View>
-              ))}
             </View>
           </View>
 
@@ -348,6 +207,55 @@ export default function WorkspaceDetailScreen() {
                   <Feather name="user-plus" size={20} color="white" />
                 </TouchableOpacity>
               </View>
+            </View>
+          )}
+
+          {/* ── Members List ── */}
+          {showMembers && (
+            <View className="mt-8 bg-gray-50 p-6 rounded-[32px]">
+              <Text className="text-[10px] font-black text-black uppercase tracking-widest mb-4">
+                Workspace Members
+              </Text>
+              {selectedWorkspaceMembers.length > 0 ? (
+                selectedWorkspaceMembers.map((member, index) => {
+                  const userId =
+                    typeof member.userId === "string"
+                      ? member.userId
+                      : member.userId?._id;
+                  const userName =
+                    typeof member.userId === "string"
+                      ? "User"
+                      : member.userId?.name || "User";
+                  const userEmail =
+                    typeof member.userId === "string"
+                      ? "N/A"
+                      : member.userId?.email || "N/A";
+                  return (
+                    <View
+                      key={index}
+                      className="bg-white p-4 rounded-xl mb-3 flex-row items-center justify-between"
+                    >
+                      <View className="flex-1">
+                        <Text className="text-sm font-bold text-black">
+                          {userName}
+                        </Text>
+                        <Text className="text-xs text-gray-400 mt-1">
+                          {userEmail}
+                        </Text>
+                      </View>
+                      <View className="bg-gray-100 px-3 py-1.5 rounded-full">
+                        <Text className="text-[10px] font-bold text-gray-700 uppercase">
+                          {member.role}
+                        </Text>
+                      </View>
+                    </View>
+                  );
+                })
+              ) : (
+                <Text className="text-sm text-gray-400 text-center py-4">
+                  No members yet
+                </Text>
+              )}
             </View>
           )}
 
@@ -427,12 +335,6 @@ export default function WorkspaceDetailScreen() {
                             source={{ html: buildHtml(doc.content) }}
                             style={{ flex: 1 }}
                             scrollEnabled={true}
-                            onShouldStartLoadWithRequest={(req) => {
-                              if (req.navigationType === "click" && req.url !== "about:blank") {
-                                return false;
-                              }
-                              return true;
-                            }}
                           />
                         </View>
                         {canEdit && (

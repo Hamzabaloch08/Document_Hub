@@ -2,12 +2,12 @@ import api from "@/src/config/apiClient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import {
-  CreateDocumentPayload,
-  DocumentItem,
-  DocumentResponse,
-  MarkDocumentReadPayload,
-  SearchPublicDocumentsPayload,
-  UpdateDocumentPayload,
+    CreateDocumentPayload,
+    DocumentItem,
+    DocumentResponse,
+    MarkDocumentReadPayload,
+    SearchPublicDocumentsPayload,
+    UpdateDocumentPayload,
 } from "../types/documentTypes";
 
 const getErrorMessage = (error: any, fallback: string): string => {
@@ -55,7 +55,9 @@ export const fetchWorkspaceDocuments = createAsyncThunk<
       const response = await api.get(`/api/documents/${workspaceId}`);
       return pickDocuments(response.data);
     } catch (error: any) {
-      return rejectWithValue(getErrorMessage(error, "Failed to fetch workspace documents"));
+      return rejectWithValue(
+        getErrorMessage(error, "Failed to fetch workspace documents"),
+      );
     }
   },
 );
@@ -67,11 +69,21 @@ export const createDocument = createAsyncThunk<
   { rejectValue: string }
 >("document/createDocument", async (payload, { rejectWithValue }) => {
   try {
-    const response = await api.post<DocumentResponse | any>("/api/documents", payload);
+    console.log("[DEBUG] Creating document with payload:", payload);
+    const response = await api.post<DocumentResponse | any>(
+      "/api/documents",
+      payload,
+    );
+    console.log("[DEBUG] Document created, response:", response.data);
     const document = pickSingleDocument(response.data);
     if (!document?._id) throw new Error("Invalid create document response");
+    console.log("[DEBUG] Parsed document visibility:", document?.visibility);
     return document;
   } catch (error: any) {
+    console.error(
+      "[DEBUG] Create document error:",
+      error?.response?.data || error?.message,
+    );
     return rejectWithValue(getErrorMessage(error, "Failed to create document"));
   }
 });
@@ -83,7 +95,10 @@ export const updateDocument = createAsyncThunk<
   { rejectValue: string }
 >("document/updateDocument", async ({ id, data }, { rejectWithValue }) => {
   try {
-    const response = await api.put<DocumentResponse | any>(`/api/documents/${id}`, data);
+    const response = await api.put<DocumentResponse | any>(
+      `/api/documents/${id}`,
+      data,
+    );
     const document = pickSingleDocument(response.data);
     if (!document?._id) throw new Error("Invalid update document response");
     return document;
@@ -115,19 +130,24 @@ export const fetchRecentDocuments = createAsyncThunk<
   try {
     const role = await getRoleFromStorage();
     // Fallback to list endpoints since /recent is missing on backend
-    const endpoint = role === "admin" ? "/api/documents/admin/all" : "/api/documents/public";
-    
+    const endpoint =
+      role === "admin" ? "/api/documents/admin/all" : "/api/documents/public";
+
     const response = await api.get(endpoint);
     const docs = pickDocuments(response.data);
-    
+
     // Sort by createdAt or updatedAt desc locally
-    return docs.sort((a, b) => {
-      const dateA = new Date(a.updatedAt || a.createdAt || 0).getTime();
-      const dateB = new Date(b.updatedAt || b.createdAt || 0).getTime();
-      return dateB - dateA;
-    }).slice(0, 5);
+    return docs
+      .sort((a, b) => {
+        const dateA = new Date(a.updatedAt || a.createdAt || 0).getTime();
+        const dateB = new Date(b.updatedAt || b.createdAt || 0).getTime();
+        return dateB - dateA;
+      })
+      .slice(0, 5);
   } catch (error: any) {
-    return rejectWithValue(getErrorMessage(error, "Failed to fetch recent documents"));
+    return rejectWithValue(
+      getErrorMessage(error, "Failed to fetch recent documents"),
+    );
   }
 });
 
@@ -144,7 +164,9 @@ export const fetchPublicDocuments = createAsyncThunk<
     const response = await api.get(endpoint);
     return pickDocuments(response.data);
   } catch (error: any) {
-    return rejectWithValue(getErrorMessage(error, "Failed to fetch public documents"));
+    return rejectWithValue(
+      getErrorMessage(error, "Failed to fetch public documents"),
+    );
   }
 });
 
@@ -159,7 +181,9 @@ export const searchPublicDocuments = createAsyncThunk<
     const response = await api.get(`/user/search-item?q=${encoded}`);
     return pickDocuments(response.data);
   } catch (error: any) {
-    return rejectWithValue(getErrorMessage(error, "Failed to search documents"));
+    return rejectWithValue(
+      getErrorMessage(error, "Failed to search documents"),
+    );
   }
 });
 

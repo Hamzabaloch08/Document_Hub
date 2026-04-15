@@ -24,7 +24,7 @@ import {
     fetchUserWorkspaces,
 } from "../redux/workspaceThunks";
 
-export default function WorkspacesListScreen() {
+export default function WorkspacesScreen() {
   const dispatch = useDispatch<AppDispatch>();
   const nav = useRouter();
 
@@ -125,7 +125,11 @@ export default function WorkspacesListScreen() {
       setWsVisibility("private");
       setShowCreateBox(false);
     } else if (createWorkspace.rejected.match(result)) {
-      Alert.alert("Error", result.payload?.message || "Failed to create workspace. Please try again.");
+      Alert.alert(
+        "Error",
+        result.payload?.message ||
+          "Failed to create workspace. Please try again.",
+      );
     }
   };
 
@@ -211,6 +215,30 @@ export default function WorkspacesListScreen() {
                 className="bg-white border border-gray-100 rounded-2xl px-5 py-4 text-black font-bold mb-6"
                 style={{ minHeight: 80 }}
               />
+              <Text className="text-[10px] font-black text-black uppercase tracking-widest mb-3">
+                Visibility
+              </Text>
+              <View className="flex-row gap-3 mb-6">
+                {(["private", "public"] as const).map((v) => (
+                  <TouchableOpacity
+                    key={v}
+                    onPress={() => setWsVisibility(v)}
+                    className={`flex-1 py-3 rounded-2xl border items-center ${
+                      wsVisibility === v
+                        ? "bg-black border-black"
+                        : "bg-white border-gray-200"
+                    }`}
+                  >
+                    <Text
+                      className={`text-[10px] font-black uppercase tracking-[1px] ${
+                        wsVisibility === v ? "text-white" : "text-black"
+                      }`}
+                    >
+                      {v}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
               <TouchableOpacity
                 onPress={handleCreateWorkspace}
                 disabled={actionLoading}

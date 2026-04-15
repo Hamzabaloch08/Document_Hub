@@ -229,7 +229,7 @@ export default function DashboardScreen() {
                   displayWorkspaces.map((ws) => (
                     <TouchableOpacity
                       key={ws._id}
-                      className="w-[160px] bg-white p-5 rounded-2xl border border-gray-100 mr-3 shadow-sm shadow-gray-50"
+                      className="w-[160px] bg-white p-5 rounded-2xl border border-gray-100 mr-3 shadow-sm "
                       onPress={() => nav.push(`/(workspace)/detail?id=${ws._id}`)}
                     >
                       <View className="w-10 h-10 bg-gray-50 rounded-xl items-center justify-center mb-3">
@@ -275,7 +275,7 @@ export default function DashboardScreen() {
             (isViewer ? publicDocuments.slice(0, 5) : recentDocuments).map((doc) => (
               <TouchableOpacity
                 key={doc._id}
-                className="flex-row items-center bg-white p-4 rounded-2xl border border-gray-100 mb-3 shadow-sm shadow-gray-50"
+                className="flex-row items-center bg-white p-4 rounded-2xl border border-gray-100 mb-3 shadow-sm "
                 onPress={() => {
                   dispatch(markDocumentAsRead({ documentId: doc._id }));
                   const wsId = getWorkspaceId(doc);
@@ -305,7 +305,7 @@ export default function DashboardScreen() {
       {/* FAB - Admin only (create workspace or doc) */}
       {isAdmin && (
         <TouchableOpacity
-          className="absolute bottom-24 right-6 w-14 h-14 bg-black rounded-2xl items-center justify-center shadow-lg shadow-gray-400"
+          className="absolute bottom-24 right-6 w-14 h-14 bg-black rounded-2xl items-center justify-center shadow-lg "
           onPress={() => nav.push("/(tabs)/workspaces")}
         >
           <Feather name="plus" size={24} color="white" />

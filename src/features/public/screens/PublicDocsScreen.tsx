@@ -3,6 +3,7 @@ import { deleteDocument, fetchPublicDocuments, markDocumentAsRead, searchPublicD
 import { AppDispatch, RootState } from "@/src/store/store";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -31,7 +32,21 @@ export default function PublicDocsScreen() {
   const nav = useRouter();
   const { publicDocuments, loading, actionLoading, error } = useSelector((state: RootState) => state.document);
   const [searchQuery, setSearchQuery] = useState("");
+  const [userRole, setUserRole] = useState<"admin" | "editor" | "viewer">("viewer");
   const debouncedQuery = useDebounce(searchQuery.trim(), 350);
+
+  useEffect(() => {
+    AsyncStorage.getItem("user").then((raw) => {
+      if (!raw) return;
+      try {
+        const u = JSON.parse(raw);
+        const r = (u?.role || "viewer").toLowerCase();
+        if (r === "admin" || r === "editor" || r === "viewer") {
+          setUserRole(r as any);
+        }
+      } catch {}
+    });
+  }, []);
 
   useEffect(() => {
     dispatch(fetchPublicDocuments());
@@ -71,6 +86,8 @@ export default function PublicDocsScreen() {
       },
     ]);
   };
+
+  const canManage = userRole === "admin" || userRole === "editor";
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
@@ -116,7 +133,9 @@ export default function PublicDocsScreen() {
               </Text>
             </View>
           ) : (
-            publicDocuments.map((doc: any) => {
+            publicDocuments
+              .filter((doc: any) => doc.status !== "draft")
+              .map((doc: any) => {
               const wsId = typeof doc.workspaceId === "string" ? doc.workspaceId : doc.workspaceId?._id;
               return (
                 <View key={doc._id} className="mb-5 rounded-3xl border border-gray-100 bg-white overflow-hidden">
@@ -131,13 +150,15 @@ export default function PublicDocsScreen() {
                         </View>
                       </View>
                       <View className="flex-row gap-2">
-                        <TouchableOpacity
-                          onPress={() => handleDelete(doc)}
-                          disabled={actionLoading}
-                          className="w-9 h-9 rounded-full border border-red-100 items-center justify-center bg-red-50"
-                        >
-                          <Feather name="trash-2" size={14} color="#DC2626" />
-                        </TouchableOpacity>
+                        {canManage && (
+                          <TouchableOpacity
+                            onPress={() => handleDelete(doc)}
+                            disabled={actionLoading}
+                            className="w-9 h-9 rounded-full border border-red-100 items-center justify-center bg-red-50"
+                          >
+                            <Feather name="trash-2" size={14} color="#DC2626" />
+                          </TouchableOpacity>
+                        )}
                         <TouchableOpacity
                           onPress={() => handleOpen(doc._id, wsId)}
                           disabled={actionLoading}
@@ -160,6 +181,12 @@ export default function PublicDocsScreen() {
                       scrollEnabled
                       nestedScrollEnabled
                       showsVerticalScrollIndicator={false}
+                      onShouldStartLoadWithRequest={(req) => {
+                        if (req.navigationType === "click" && req.url !== "about:blank") {
+                          return false;
+                        }
+                        return true;
+                      }}
                     />
                   </View>
                 </View>
