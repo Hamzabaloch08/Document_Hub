@@ -131,73 +131,75 @@ export default function ForgotPasswordScreen() {
                 </View>
               )}
 
-              {step === 1 && (
-                <View className="mb-8">
-                  <Text className="text-sm font-bold text-black mb-3">
-                    Email Address
-                  </Text>
-                  <View className="border-b border-black pb-4">
-                    <TextInput
-                      className="text-base text-black font-medium"
-                      placeholder="name@company.com"
-                      placeholderTextColor="#9CA3AF"
-                      value={email}
-                      onChangeText={setEmail}
-                      autoCapitalize="none"
-                      keyboardType="email-address"
-                      editable={!loading}
-                    />
-                  </View>
-                </View>
-              )}
-
-              {step === 2 && (
-                <View className="mb-8">
-                  <Text className="text-sm font-bold text-black mb-3">
-                    Security Code
-                  </Text>
-                  <View className="border-b border-black pb-4">
-                    <TextInput
-                      className="text-base text-black font-medium tracking-widest"
-                      placeholder="000000"
-                      placeholderTextColor="#9CA3AF"
-                      value={otp}
-                      onChangeText={setOtp}
-                      keyboardType="number-pad"
-                      maxLength={6}
-                      editable={!loading}
-                    />
-                  </View>
-                  <Text className="text-sm text-gray-600 mt-3">
-                    Check your email for the code
-                  </Text>
-                </View>
-              )}
-
-              {step === 3 && (
-                <View className="mb-8">
-                  <View className="mb-6">
+              {/* Form Card */}
+              <View className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+                {step === 1 && (
+                  <View>
                     <Text className="text-sm font-bold text-black mb-3">
-                      New Password
+                      Email Address
                     </Text>
-                    <View className="border-b border-black pb-4 flex-row items-center">
+                    <View className="border-b border-black pb-4">
                       <TextInput
-                        className="flex-1 text-base text-black font-medium"
-                        placeholder="••••••••"
+                        className="text-base text-black font-medium"
+                        placeholder="name@company.com"
                         placeholderTextColor="#9CA3AF"
-                        secureTextEntry={!showPassword}
-                        value={newPassword}
-                        onChangeText={setNewPassword}
+                        value={email}
+                        onChangeText={setEmail}
                         autoCapitalize="none"
-                        autoCorrect={false}
-                        autoComplete="off"
+                        keyboardType="email-address"
                         editable={!loading}
                       />
-                      <TouchableOpacity
-                        onPress={() => setShowPassword(!showPassword)}
-                      >
-                        <Feather
-                          name={showPassword ? "eye" : "eye-off"}
+                    </View>
+                  </View>
+                )}
+
+                {step === 2 && (
+                  <View>
+                    <Text className="text-sm font-bold text-black mb-3">
+                      Security Code
+                    </Text>
+                    <View className="border-b border-black pb-4">
+                      <TextInput
+                        className="text-base text-black font-medium tracking-widest"
+                        placeholder="000000"
+                        placeholderTextColor="#9CA3AF"
+                        value={otp}
+                        onChangeText={setOtp}
+                        keyboardType="number-pad"
+                        maxLength={6}
+                        editable={!loading}
+                      />
+                    </View>
+                    <Text className="text-sm text-gray-600 mt-3">
+                      Check your email for the code
+                    </Text>
+                  </View>
+                )}
+
+                {step === 3 && (
+                  <View>
+                    <View className="mb-6">
+                      <Text className="text-sm font-bold text-black mb-3">
+                        New Password
+                      </Text>
+                      <View className="border-b border-black pb-4 flex-row items-center">
+                        <TextInput
+                          className="flex-1 text-base text-black font-medium"
+                          placeholder="••••••••"
+                          placeholderTextColor="#9CA3AF"
+                          secureTextEntry={!showPassword}
+                          value={newPassword}
+                          onChangeText={setNewPassword}
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                          autoComplete="off"
+                          editable={!loading}
+                        />
+                        <TouchableOpacity
+                          onPress={() => setShowPassword(!showPassword)}
+                        >
+                          <Feather
+                            name={showPassword ? "eye" : "eye-off"}
                           size={18}
                           color="black"
                         />

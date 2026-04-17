@@ -79,76 +79,79 @@ export default function SignupScreen() {
                 </Text>
               </View>
 
-              {error && (
-                <View className="mb-6 p-4 border-l-4 border-black bg-gray-50">
-                  <Text className="text-black text-sm font-semibold">
-                    {error}
+              {/* Form Card */}
+              <View className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+                {error && (
+                  <View className="mb-6 p-4 border-l-4 border-black bg-gray-50">
+                    <Text className="text-black text-sm font-semibold">
+                      {error}
+                    </Text>
+                  </View>
+                )}
+
+                {/* Full Name Input */}
+                <View className="mb-6">
+                  <Text className="text-sm font-bold text-black mb-3">
+                    Full Name
                   </Text>
-                </View>
-              )}
-
-              {/* Full Name Input */}
-              <View className="mb-6">
-                <Text className="text-sm font-bold text-black mb-3">
-                  Full Name
-                </Text>
-                <View className="border-b border-black pb-4">
-                  <TextInput
-                    className="text-base text-black font-medium"
-                    placeholder="John Doe"
-                    placeholderTextColor="#9CA3AF"
-                    value={username}
-                    onChangeText={setUsername}
-                    autoCapitalize="words"
-                    editable={!loading}
-                  />
-                </View>
-              </View>
-
-              {/* Email Input */}
-              <View className="mb-6">
-                <Text className="text-sm font-bold text-black mb-3">
-                  Email Address
-                </Text>
-                <View className="border-b border-black pb-4">
-                  <TextInput
-                    className="text-base text-black font-medium"
-                    placeholder="name@company.com"
-                    placeholderTextColor="#9CA3AF"
-                    value={email}
-                    onChangeText={setEmail}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    editable={!loading}
-                  />
-                </View>
-              </View>
-
-              {/* Password Input */}
-              <View className="mb-8">
-                <Text className="text-sm font-bold text-black mb-3">
-                  Password
-                </Text>
-                <View className="border-b border-black pb-4 flex-row items-center">
-                  <TextInput
-                    className="flex-1 text-base text-black font-medium"
-                    placeholder="••••••••"
-                    placeholderTextColor="#9CA3AF"
-                    secureTextEntry={!showPassword}
-                    value={password}
-                    onChangeText={setPassword}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    autoComplete="off"
-                    editable={!loading}
-                  />
-                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                    <Feather
-                      name={showPassword ? "eye" : "eye-off"}
-                      size={18}
-                      color="black"
+                  <View className="border-b border-black pb-4">
+                    <TextInput
+                      className="text-base text-black font-medium"
+                      placeholder="John Doe"
+                      placeholderTextColor="#9CA3AF"
+                      value={username}
+                      onChangeText={setUsername}
+                      autoCapitalize="words"
+                      editable={!loading}
                     />
-                  </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Email Input */}
+                <View className="mb-6">
+                  <Text className="text-sm font-bold text-black mb-3">
+                    Email Address
+                  </Text>
+                  <View className="border-b border-black pb-4">
+                    <TextInput
+                      className="text-base text-black font-medium"
+                      placeholder="name@company.com"
+                      placeholderTextColor="#9CA3AF"
+                      value={email}
+                      onChangeText={setEmail}
+                      autoCapitalize="none"
+                      keyboardType="email-address"
+                      editable={!loading}
+                    />
+                  </View>
+                </View>
+
+                {/* Password Input */}
+                <View className="mb-2">
+                  <Text className="text-sm font-bold text-black mb-3">
+                    Password
+                  </Text>
+                  <View className="border-b border-black pb-4 flex-row items-center">
+                    <TextInput
+                      className="flex-1 text-base text-black font-medium"
+                      placeholder="••••••••"
+                      placeholderTextColor="#9CA3AF"
+                      secureTextEntry={!showPassword}
+                      value={password}
+                      onChangeText={setPassword}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      autoComplete="off"
+                      editable={!loading}
+                    />
+                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                      <Feather
+                        name={showPassword ? "eye" : "eye-off"}
+                        size={18}
+                        color="black"
+                      />
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
 

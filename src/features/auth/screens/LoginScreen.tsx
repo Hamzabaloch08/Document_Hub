@@ -77,7 +77,7 @@ export default function LoginScreen() {
               </View>
 
               {/* Heading */}
-              <View className="mb-10">
+              <View className="mb-8">
                 <Text className="text-black text-3xl font-bold text-center" style={{ fontFamily: 'Outfit' }}>
                   Welcome Back
                 </Text>
@@ -86,60 +86,63 @@ export default function LoginScreen() {
                 </Text>
               </View>
 
-              {/* Email Input */}
-              <View className="mb-6">
-                <Text className="text-sm font-bold text-black mb-3">
-                  Email Address
-                </Text>
-                <View className="border-b border-black pb-4 flex-row items-center">
-                  <TextInput
-                    className="flex-1 text-base text-black font-medium"
-                    placeholder="name@company.com"
-                    placeholderTextColor="#9CA3AF"
-                    value={email}
-                    onChangeText={setEmail}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    editable={!loading}
-                  />
-                </View>
-              </View>
-
-              {/* Password Input */}
-              <View className="mb-2">
-                <Text className="text-sm font-bold text-black mb-3">
-                  Password
-                </Text>
-                <View className="border-b border-black pb-4 flex-row items-center">
-                  <TextInput
-                    className="flex-1 text-base text-black font-medium"
-                    placeholder="••••••••"
-                    placeholderTextColor="#9CA3AF"
-                    secureTextEntry={!showPassword}
-                    value={password}
-                    onChangeText={setPassword}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    autoComplete="off"
-                    editable={!loading}
-                  />
-                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                    <Feather
-                      name={showPassword ? "eye" : "eye-off"}
-                      size={18}
-                      color="black"
+              {/* Form Card */}
+              <View className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+                {/* Email Input */}
+                <View className="mb-6">
+                  <Text className="text-sm font-bold text-black mb-3">
+                    Email Address
+                  </Text>
+                  <View className="border-b border-black pb-4 flex-row items-center">
+                    <TextInput
+                      className="flex-1 text-base text-black font-medium"
+                      placeholder="name@company.com"
+                      placeholderTextColor="#9CA3AF"
+                      value={email}
+                      onChangeText={setEmail}
+                      autoCapitalize="none"
+                      keyboardType="email-address"
+                      editable={!loading}
                     />
+                  </View>
+                </View>
+
+                {/* Password Input */}
+                <View className="mb-6">
+                  <Text className="text-sm font-bold text-black mb-3">
+                    Password
+                  </Text>
+                  <View className="border-b border-black pb-4 flex-row items-center">
+                    <TextInput
+                      className="flex-1 text-base text-black font-medium"
+                      placeholder="••••••••"
+                      placeholderTextColor="#9CA3AF"
+                      secureTextEntry={!showPassword}
+                      value={password}
+                      onChangeText={setPassword}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      autoComplete="off"
+                      editable={!loading}
+                    />
+                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                      <Feather
+                        name={showPassword ? "eye" : "eye-off"}
+                        size={18}
+                        color="black"
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Forgot Password Link */}
+                <View className="flex-row justify-end">
+                  <TouchableOpacity onPress={() => router.push("/(auth)/forgot-password")}>
+                    <Text className="text-sm font-bold text-black">
+                      Forgot Password?
+                    </Text>
                   </TouchableOpacity>
                 </View>
-              </View>
-
-              {/* Forgot Password Link */}
-              <View className="flex-row justify-end mb-8 mt-4">
-                <TouchableOpacity onPress={() => router.push("/(auth)/forgot-password")}>
-                  <Text className="text-sm font-bold text-black">
-                    Forgot Password?
-                  </Text>
-                </TouchableOpacity>
               </View>
 
               {error && (
