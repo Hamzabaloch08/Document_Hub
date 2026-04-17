@@ -44,7 +44,7 @@ export default function SignupScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gradient-to-b from-slate-900 to-slate-800">
+    <SafeAreaView className="flex-1 bg-white">
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
@@ -58,130 +58,121 @@ export default function SignupScreen() {
             <View className="px-6 py-8">
               {/* Logo & Branding */}
               <View className="items-center mb-10">
-                <View className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-3xl items-center justify-center shadow-2xl mb-4">
+                <View className="w-16 h-16 bg-black rounded-2xl items-center justify-center mb-4">
                   <Feather name="layers" size={32} color="white" />
                 </View>
-                <Text className="text-4xl font-black text-white" style={{ fontFamily: 'Outfit' }}>
+                <Text className="text-4xl font-black text-black" style={{ fontFamily: 'Outfit' }}>
                   DocuHub
                 </Text>
-                <Text className="text-emerald-300 text-sm font-semibold mt-2 tracking-wider">
-                  Join Our Community
+                <Text className="text-gray-600 text-sm font-medium mt-2 tracking-wider">
+                  Documentation Hub
                 </Text>
               </View>
 
               {/* Heading */}
               <View className="mb-8">
-                <Text className="text-white text-2xl font-bold text-center" style={{ fontFamily: 'Outfit' }}>
+                <Text className="text-black text-3xl font-bold text-center" style={{ fontFamily: 'Outfit' }}>
                   Create Account
                 </Text>
-                <Text className="text-emerald-200 text-sm font-medium mt-2 text-center">
-                  Join the documentation experts
+                <Text className="text-gray-600 text-base font-medium mt-3 text-center">
+                  Join our community
                 </Text>
               </View>
 
-              {/* Main Card */}
-              <View className="bg-white rounded-3xl shadow-2xl p-8 mb-6">
-                {error && (
-                  <View className="mb-6 bg-red-50 p-4 rounded-xl border border-red-200 flex-row items-start gap-3">
-                    <Feather name="alert-circle" size={20} color="#DC2626" />
-                    <Text className="text-red-700 text-sm font-semibold flex-1">
-                      {error}
-                    </Text>
-                  </View>
-                )}
-
-                {/* Full Name Input Card */}
-                <View className="mb-6">
-                  <Text className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">
-                    Full Name
+              {error && (
+                <View className="mb-6 p-4 border-l-4 border-black bg-gray-50">
+                  <Text className="text-black text-sm font-semibold">
+                    {error}
                   </Text>
-                  <View className="bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-3 flex-row items-center">
-                    <Feather name="user" size={18} color="#10B981" />
-                    <TextInput
-                      className="flex-1 text-base text-slate-900 ml-3 font-medium"
-                      placeholder="John Doe"
-                      placeholderTextColor="#CBD5E1"
-                      value={username}
-                      onChangeText={setUsername}
-                      autoCapitalize="words"
-                      editable={!loading}
-                    />
-                  </View>
                 </View>
+              )}
 
-                {/* Email Input Card */}
-                <View className="mb-6">
-                  <Text className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">
-                    Email Address
-                  </Text>
-                  <View className="bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-3 flex-row items-center">
-                    <Feather name="mail" size={18} color="#10B981" />
-                    <TextInput
-                      className="flex-1 text-base text-slate-900 ml-3 font-medium"
-                      placeholder="name@company.com"
-                      placeholderTextColor="#CBD5E1"
-                      value={email}
-                      onChangeText={setEmail}
-                      autoCapitalize="none"
-                      keyboardType="email-address"
-                      editable={!loading}
-                    />
-                  </View>
+              {/* Full Name Input */}
+              <View className="mb-6">
+                <Text className="text-sm font-bold text-black mb-3">
+                  Full Name
+                </Text>
+                <View className="border-b border-black pb-4">
+                  <TextInput
+                    className="text-base text-black font-medium"
+                    placeholder="John Doe"
+                    placeholderTextColor="#9CA3AF"
+                    value={username}
+                    onChangeText={setUsername}
+                    autoCapitalize="words"
+                    editable={!loading}
+                  />
                 </View>
-
-                {/* Password Input Card */}
-                <View className="mb-2">
-                  <Text className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">
-                    Password
-                  </Text>
-                  <View className="bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-3 flex-row items-center">
-                    <Feather name="lock" size={18} color="#10B981" />
-                    <TextInput
-                      className="flex-1 text-base text-slate-900 ml-3 font-medium"
-                      placeholder="••••••••"
-                      placeholderTextColor="#CBD5E1"
-                      secureTextEntry={!showPassword}
-                      value={password}
-                      onChangeText={setPassword}
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      autoComplete="off"
-                      editable={!loading}
-                    />
-                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                      <Feather
-                        name={showPassword ? "eye" : "eye-off"}
-                        size={18}
-                        color="#10B981"
-                      />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-
-                {/* Create Account Button */}
-                <TouchableOpacity
-                  onPress={handleRegister}
-                  activeOpacity={0.8}
-                  disabled={loading}
-                  className={`h-14 rounded-2xl items-center justify-center flex-row gap-2 shadow-lg mt-8 ${
-                    loading
-                      ? "bg-slate-300 shadow-none"
-                      : "bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-emerald-300"
-                  }`}
-                >
-                  {loading && <Feather name="loader" size={18} color="white" />}
-                  <Text className="text-white text-base font-bold tracking-wider">
-                    {loading ? "Creating Account..." : "Create Account"}
-                  </Text>
-                </TouchableOpacity>
               </View>
 
+              {/* Email Input */}
+              <View className="mb-6">
+                <Text className="text-sm font-bold text-black mb-3">
+                  Email Address
+                </Text>
+                <View className="border-b border-black pb-4">
+                  <TextInput
+                    className="text-base text-black font-medium"
+                    placeholder="name@company.com"
+                    placeholderTextColor="#9CA3AF"
+                    value={email}
+                    onChangeText={setEmail}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    editable={!loading}
+                  />
+                </View>
+              </View>
+
+              {/* Password Input */}
+              <View className="mb-8">
+                <Text className="text-sm font-bold text-black mb-3">
+                  Password
+                </Text>
+                <View className="border-b border-black pb-4 flex-row items-center">
+                  <TextInput
+                    className="flex-1 text-base text-black font-medium"
+                    placeholder="••••••••"
+                    placeholderTextColor="#9CA3AF"
+                    secureTextEntry={!showPassword}
+                    value={password}
+                    onChangeText={setPassword}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    autoComplete="off"
+                    editable={!loading}
+                  />
+                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                    <Feather
+                      name={showPassword ? "eye" : "eye-off"}
+                      size={18}
+                      color="black"
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Create Account Button */}
+              <TouchableOpacity
+                onPress={handleRegister}
+                activeOpacity={0.8}
+                disabled={loading}
+                className={`h-14 rounded-lg items-center justify-center flex-row gap-2 ${
+                  loading ? "bg-gray-300" : "bg-black"
+                }`}
+              >
+                {loading && <Feather name="loader" size={18} color="white" />}
+                <Text className="text-white text-base font-bold">
+                  {loading ? "Creating Account..." : "Create Account"}
+                </Text>
+              </TouchableOpacity>
+
               {/* Login Link */}
-              <View className="items-center">
-                <Text className="text-slate-300 text-sm font-medium">
+              <View className="mt-8 items-center">
+                <Text className="text-gray-600 text-base font-medium">
                   Already have an account?{" "}
                   <Text
-                    className="text-emerald-400 font-bold"
+                    className="text-black font-bold"
                     onPress={() => router.replace("/(auth)/login")}
                   >
                     Sign In

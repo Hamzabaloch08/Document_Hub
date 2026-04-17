@@ -80,7 +80,7 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gradient-to-b from-slate-900 to-slate-800">
+    <SafeAreaView className="flex-1 bg-white">
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
@@ -91,179 +91,169 @@ export default function ForgotPasswordScreen() {
             contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
             keyboardShouldPersistTaps="handled"
           >
-            <View className="px-6 py-8">
+            <View className="px-6 py-12">
               {/* Header */}
               <View className="items-center mb-10">
-                <View className="w-16 h-16 bg-gradient-to-br from-amber-500 to-amber-600 rounded-3xl items-center justify-center shadow-2xl mb-4">
+                <View className="w-16 h-16 bg-black rounded-2xl items-center justify-center mb-4">
                   <Feather name="shield" size={32} color="white" />
                 </View>
-                <Text className="text-4xl font-black text-white" style={{ fontFamily: 'Outfit' }}>
+                <Text className="text-4xl font-black text-black" style={{ fontFamily: 'Outfit' }}>
                   Reset Password
                 </Text>
-                <Text className="text-amber-300 text-sm font-semibold mt-2 tracking-wider">
+                <Text className="text-gray-600 text-sm font-medium mt-2 tracking-wider">
                   Recover Your Access
                 </Text>
               </View>
 
               {/* Title */}
               <View className="mb-8">
-                <Text className="text-white text-2xl font-bold text-center" style={{ fontFamily: 'Outfit' }}>
+                <Text className="text-black text-3xl font-bold text-center" style={{ fontFamily: 'Outfit' }}>
                   {step === 1
                     ? "Enter Email"
                     : step === 2
-                      ? "Enter OTP"
-                      : "Set New Password"}
+                      ? "Enter Code"
+                      : "New Password"}
                 </Text>
-                <Text className="text-amber-200 text-sm font-medium mt-2 text-center">
+                <Text className="text-gray-600 text-base font-medium mt-2 text-center">
                   {step === 1
                     ? "Send recovery instructions"
                     : step === 2
                       ? "Verify your identity"
-                      : "Create a strong password"}
+                      : "Create a new password"}
                 </Text>
               </View>
 
-              {/* Main Card */}
-              <View className="bg-white rounded-3xl shadow-2xl p-8 mb-6">
-                {errorMsg && (
-                  <View className="mb-6 bg-red-50 p-4 rounded-xl border border-red-200 flex-row items-start gap-3">
-                    <Feather name="alert-circle" size={20} color="#DC2626" />
-                    <Text className="text-red-700 text-sm font-semibold flex-1">
-                      {errorMsg}
-                    </Text>
-                  </View>
-                )}
-                
-                {step === 1 && (
-                  <View>
-                    <Text className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">
-                      Email Address
-                    </Text>
-                    <View className="bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-3 flex-row items-center">
-                      <Feather name="mail" size={18} color="#F59E0B" />
-                      <TextInput
-                        className="flex-1 text-base text-slate-900 ml-3 font-medium"
-                        placeholder="name@company.com"
-                        placeholderTextColor="#CBD5E1"
-                        value={email}
-                        onChangeText={setEmail}
-                        autoCapitalize="none"
-                        keyboardType="email-address"
-                        editable={!loading}
-                      />
-                    </View>
-                  </View>
-                )}
-
-                {step === 2 && (
-                  <View>
-                    <Text className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">
-                      Security Code
-                    </Text>
-                    <View className="bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-3 flex-row items-center">
-                      <Feather name="key" size={18} color="#F59E0B" />
-                      <TextInput
-                        className="flex-1 text-base text-slate-900 ml-3 font-medium tracking-widest"
-                        placeholder="000000"
-                        placeholderTextColor="#CBD5E1"
-                        value={otp}
-                        onChangeText={setOtp}
-                        keyboardType="number-pad"
-                        maxLength={6}
-                        editable={!loading}
-                      />
-                    </View>
-                    <Text className="text-xs text-slate-500 mt-3">
-                      Code sent to {email}
-                    </Text>
-                  </View>
-                )}
-
-                {step === 3 && (
-                  <View>
-                    <View className="mb-6">
-                      <Text className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">
-                        New Password
-                      </Text>
-                      <View className="bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-3 flex-row items-center">
-                        <Feather name="lock" size={18} color="#F59E0B" />
-                        <TextInput
-                          className="flex-1 text-base text-slate-900 ml-3 font-medium"
-                          placeholder="••••••••"
-                          placeholderTextColor="#CBD5E1"
-                          secureTextEntry={!showPassword}
-                          value={newPassword}
-                          onChangeText={setNewPassword}
-                          autoCapitalize="none"
-                          autoCorrect={false}
-                          autoComplete="off"
-                          editable={!loading}
-                        />
-                        <TouchableOpacity
-                          onPress={() => setShowPassword(!showPassword)}
-                        >
-                          <Feather
-                            name={showPassword ? "eye" : "eye-off"}
-                            size={18}
-                            color="#F59E0B"
-                          />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-
-                    <View className="mb-2">
-                      <Text className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">
-                        Confirm Password
-                      </Text>
-                      <View className="bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-3 flex-row items-center">
-                        <Feather name="lock" size={18} color="#F59E0B" />
-                        <TextInput
-                          className="flex-1 text-base text-slate-900 ml-3 font-medium"
-                          placeholder="••••••••"
-                          placeholderTextColor="#CBD5E1"
-                          secureTextEntry={!showPassword}
-                          value={confirmPassword}
-                          onChangeText={setConfirmPassword}
-                          autoCapitalize="none"
-                          autoCorrect={false}
-                          autoComplete="off"
-                          editable={!loading}
-                        />
-                      </View>
-                    </View>
-                  </View>
-                )}
-
-                {/* Action Button */}
-                <TouchableOpacity
-                  onPress={() => {
-                    if (step === 1) handleSendOTP();
-                    else if (step === 2) handleVerifyOTP();
-                    else handleChangePassword();
-                  }}
-                  activeOpacity={0.8}
-                  disabled={loading}
-                  className={`h-14 rounded-2xl items-center justify-center flex-row gap-2 shadow-lg mt-8 ${
-                    loading
-                      ? "bg-slate-300 shadow-none"
-                      : "bg-gradient-to-r from-amber-500 to-amber-600 shadow-amber-300"
-                  }`}
-                >
-                  {loading && <Feather name="loader" size={18} color="white" />}
-                  <Text className="text-white text-base font-bold tracking-wider">
-                    {loading
-                      ? "Processing..."
-                      : step === 1
-                        ? "Send Code"
-                        : step === 2
-                          ? "Verify Code"
-                          : "Change Password"}
+              {errorMsg && (
+                <View className="mb-6 p-4 border-l-4 border-black bg-gray-50">
+                  <Text className="text-black text-sm font-semibold">
+                    {errorMsg}
                   </Text>
-                </TouchableOpacity>
-              </View>
+                </View>
+              )}
+
+              {step === 1 && (
+                <View className="mb-8">
+                  <Text className="text-sm font-bold text-black mb-3">
+                    Email Address
+                  </Text>
+                  <View className="border-b border-black pb-4">
+                    <TextInput
+                      className="text-base text-black font-medium"
+                      placeholder="name@company.com"
+                      placeholderTextColor="#9CA3AF"
+                      value={email}
+                      onChangeText={setEmail}
+                      autoCapitalize="none"
+                      keyboardType="email-address"
+                      editable={!loading}
+                    />
+                  </View>
+                </View>
+              )}
+
+              {step === 2 && (
+                <View className="mb-8">
+                  <Text className="text-sm font-bold text-black mb-3">
+                    Security Code
+                  </Text>
+                  <View className="border-b border-black pb-4">
+                    <TextInput
+                      className="text-base text-black font-medium tracking-widest"
+                      placeholder="000000"
+                      placeholderTextColor="#9CA3AF"
+                      value={otp}
+                      onChangeText={setOtp}
+                      keyboardType="number-pad"
+                      maxLength={6}
+                      editable={!loading}
+                    />
+                  </View>
+                  <Text className="text-sm text-gray-600 mt-3">
+                    Check your email for the code
+                  </Text>
+                </View>
+              )}
+
+              {step === 3 && (
+                <View className="mb-8">
+                  <View className="mb-6">
+                    <Text className="text-sm font-bold text-black mb-3">
+                      New Password
+                    </Text>
+                    <View className="border-b border-black pb-4 flex-row items-center">
+                      <TextInput
+                        className="flex-1 text-base text-black font-medium"
+                        placeholder="••••••••"
+                        placeholderTextColor="#9CA3AF"
+                        secureTextEntry={!showPassword}
+                        value={newPassword}
+                        onChangeText={setNewPassword}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        autoComplete="off"
+                        editable={!loading}
+                      />
+                      <TouchableOpacity
+                        onPress={() => setShowPassword(!showPassword)}
+                      >
+                        <Feather
+                          name={showPassword ? "eye" : "eye-off"}
+                          size={18}
+                          color="black"
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View className="mb-2">
+                    <Text className="text-sm font-bold text-black mb-3">
+                      Confirm Password
+                    </Text>
+                    <View className="border-b border-black pb-4 flex-row items-center">
+                      <TextInput
+                        className="flex-1 text-base text-black font-medium"
+                        placeholder="••••••••"
+                        placeholderTextColor="#9CA3AF"
+                        secureTextEntry={!showPassword}
+                        value={confirmPassword}
+                        onChangeText={setConfirmPassword}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        autoComplete="off"
+                        editable={!loading}
+                      />
+                    </View>
+                  </View>
+                </View>
+              )}
+
+              {/* Action Button */}
+              <TouchableOpacity
+                onPress={() => {
+                  if (step === 1) handleSendOTP();
+                  else if (step === 2) handleVerifyOTP();
+                  else handleChangePassword();
+                }}
+                activeOpacity={0.8}
+                disabled={loading}
+                className={`h-14 rounded-lg items-center justify-center flex-row gap-2 ${
+                  loading ? "bg-gray-300" : "bg-black"
+                }`}
+              >
+                {loading && <Feather name="loader" size={18} color="white" />}
+                <Text className="text-white text-base font-bold">
+                  {loading
+                    ? "Processing..."
+                    : step === 1
+                      ? "Send Code"
+                      : step === 2
+                        ? "Verify Code"
+                        : "Change Password"}
+                </Text>
+              </TouchableOpacity>
 
               {/* Back Link */}
-              <View className="items-center">
+              <View className="items-center mt-8">
                 <TouchableOpacity
                   onPress={() => {
                     if (step > 1) {
@@ -275,8 +265,8 @@ export default function ForgotPasswordScreen() {
                   }}
                   className="flex-row items-center gap-2"
                 >
-                  <Feather name="arrow-left" size={16} color="#D1D5DB" />
-                  <Text className="text-sm font-semibold text-slate-300">
+                  <Feather name="arrow-left" size={16} color="black" />
+                  <Text className="text-base font-semibold text-black">
                     {step > 1 ? "Go Back" : "Return to Login"}
                   </Text>
                 </TouchableOpacity>
