@@ -62,13 +62,13 @@ export default function ProfileScreen() {
       >
         <View className="px-6 py-8">
           {/* User Profile Card */}
-          <View className="bg-white rounded-2xl p-6 border border-gray-200 mb-8">
+          <View className="bg-white rounded-lg p-6 border border-gray-200 mb-8">
             <View className="flex-row items-center mb-6">
-              <View className="w-20 h-20 bg-black items-center justify-center rounded-2xl overflow-hidden">
+              <View className="w-20 h-20 bg-black items-center justify-center rounded-lg overflow-hidden">
                 {parseData?.image ? (
                   <Image
                     source={{ uri: parseData.image }}
-                    style={{ width: 80, height: 80, borderRadius: 12 }}
+                    style={{ width: 80, height: 80, borderRadius: 8 }}
                   />
                 ) : (
                   <Text className="text-white text-3xl font-black">
@@ -102,7 +102,7 @@ export default function ProfileScreen() {
             </View>
             <TouchableOpacity
               onPress={() => router.push("/(user)/edit-profile")}
-              className="bg-gray-100 h-12 rounded-lg items-center justify-center border border-gray-300 flex-row gap-2"
+              className="bg-gray-100 h-12 rounded-lg items-center justify-center border border-gray-200 flex-row gap-2"
             >
               <Feather name="edit-3" size={16} color="black" />
               <Text className="text-black font-bold text-sm">Edit Profile</Text>
@@ -111,7 +111,7 @@ export default function ProfileScreen() {
 
           {/* Stats Cards */}
           <View className="flex-row gap-4 mb-10">
-            <View className="flex-1 bg-white rounded-2xl p-6 border border-gray-200">
+            <View className="flex-1 bg-white rounded-lg p-6 border border-gray-200">
               <View className="bg-gray-100 w-12 h-12 rounded-lg items-center justify-center mb-3">
                 <Feather name="folder" size={20} color="black" />
               </View>
@@ -120,7 +120,7 @@ export default function ProfileScreen() {
                 Workspaces
               </Text>
             </View>
-            <View className="flex-1 bg-white rounded-2xl p-6 border border-gray-200">
+            <View className="flex-1 bg-white rounded-lg p-6 border border-gray-200">
               <View className="bg-gray-100 w-12 h-12 rounded-lg items-center justify-center mb-3">
                 <Feather name="file-text" size={20} color="black" />
               </View>
@@ -138,7 +138,7 @@ export default function ProfileScreen() {
             Settings & Tools
           </Text>
 
-          <View className="border border-gray-200 rounded-2xl overflow-hidden mb-6">
+          <View className="border border-gray-200 rounded-lg overflow-hidden mb-6">
             {[
               { name: "Security", icon: "shield" },
               { name: "Preferences", icon: "sliders" },
