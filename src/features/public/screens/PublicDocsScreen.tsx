@@ -1,50 +1,54 @@
 import { clearDocumentError } from "@/src/features/document/redux/documentSlice";
-import { deleteDocument, fetchPublicDocuments, markDocumentAsRead, searchPublicDocuments } from "@/src/features/document/redux/documentThunks";
+import {
+    fetchPublicDocuments,
+    searchPublicDocuments,
+} from "@/src/features/document/redux/documentThunks";
+import { DocumentItem } from "@/src/features/document/types/documentTypes";
+import { useDebounce } from "@/src/shared/hooks/useDebounce";
 import { AppDispatch, RootState } from "@/src/store/store";
 import { Feather } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import {
+    ActivityIndicator,
+    Alert,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { WebView } from "react-native-webview";
 import { useDispatch, useSelector } from "react-redux";
-import { useDebounce } from "@/src/shared/hooks/useDebounce";
 
-const buildHtml = (content: string) => `
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <style>
-      body { margin: 0; padding: 16px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #0f172a; background: #ffffff; line-height: 1.65; }
-      h1,h2,h3 { margin: 0 0 12px; }
-      p { margin: 0 0 12px; }
-      img { max-width: 100%; height: auto; border-radius: 12px; }
-    </style>
-  </head>
-  <body>${content || "<p>No content.</p>"}</body>
-</html>
-`;
+const getWorkspaceLabel = (doc: DocumentItem) =>
+  typeof doc.workspaceId === "string"
+    ? doc.workspaceId
+    : doc.workspaceId?.name || doc.workspaceId?._id || "Workspace";
+
+const getExcerpt = (content?: string) => {
+  if (!content) return "No description available.";
+  return content
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 140);
+};
 
 export default function PublicDocsScreen() {
   const dispatch = useDispatch<AppDispatch>();
   const nav = useRouter();
-  const { publicDocuments, loading, actionLoading, error } = useSelector((state: RootState) => state.document);
+  const { publicDocuments, loading, error } = useSelector(
+    (state: RootState) => state.document,
+  );
   const [searchQuery, setSearchQuery] = useState("");
-  const [userRole, setUserRole] = useState<"admin" | "editor" | "viewer">("viewer");
+  const [hasToken, setHasToken] = useState(false);
   const debouncedQuery = useDebounce(searchQuery.trim(), 350);
 
   useEffect(() => {
-    AsyncStorage.getItem("user").then((raw) => {
-      if (!raw) return;
-      try {
-        const u = JSON.parse(raw);
-        const r = (u?.role || "viewer").toLowerCase();
-        if (r === "admin" || r === "editor" || r === "viewer") {
-          setUserRole(r as any);
-        }
-      } catch {}
+    AsyncStorage.getItem("tokenGenerate").then((token) => {
+      setHasToken(Boolean(token));
     });
   }, []);
 
@@ -62,70 +66,84 @@ export default function PublicDocsScreen() {
 
   useEffect(() => {
     if (error) {
-      Alert.alert("Error", error, [{ text: "OK", onPress: () => dispatch(clearDocumentError()) }]);
+      Alert.alert("Error", error, [
+        { text: "OK", onPress: () => dispatch(clearDocumentError()) },
+      ]);
     }
   }, [error, dispatch]);
 
-  const handleOpen = (docId: string, wsId: string) => {
-    dispatch(markDocumentAsRead({ documentId: docId }));
-    if (wsId) nav.push(`/(workspace)/detail?id=${wsId}&docId=${docId}`);
+  const handleOpen = (docId: string) => {
+    nav.push(`/(public)/doc-detail?docId=${docId}`);
   };
 
-  const handleDelete = (doc: any) => {
-    Alert.alert("Delete", `Delete "${doc.title}"?`, [
-      { text: "Cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          const result = await dispatch(deleteDocument(doc._id));
-          if (deleteDocument.fulfilled.match(result)) {
-            dispatch(fetchPublicDocuments());
-          }
-        },
-      },
-    ]);
-  };
-
-  const canManage = userRole === "admin" || userRole === "editor";
+  const visibleDocuments = publicDocuments.filter((doc) => {
+    if (doc.status === "draft") return false;
+    return doc.visibility === "public";
+  });
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
-      <View className="px-6 py-6 border-b border-gray-50 flex-row justify-between items-center">
+    <SafeAreaView className="flex-1 bg-slate-50" edges={["top"]}>
+      <View className="px-6 py-5 border-b border-slate-200 flex-row justify-between items-center bg-white">
         <View>
-          <Text className="text-[10px] font-black text-gray-300 uppercase tracking-[2px]">Discovery</Text>
-          <Text className="text-2xl font-black tracking-tighter text-black">Public Docs.</Text>
+          <Text className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+            Discover
+          </Text>
+          <Text
+            className="text-3xl font-black tracking-tight text-slate-900"
+            style={{ fontFamily: "Outfit" }}
+          >
+            Public Docs
+          </Text>
         </View>
-        <Feather name="globe" size={22} color="black" />
+        <View className="flex-row items-center gap-2">
+          {!hasToken && (
+            <TouchableOpacity
+              onPress={() => nav.push("/(auth)/login")}
+              className="px-4 py-2 rounded-lg bg-black"
+            >
+              <Text className="text-white text-xs font-bold uppercase tracking-wider">
+                Login
+              </Text>
+            </TouchableOpacity>
+          )}
+          <View className="w-11 h-11 bg-white border border-slate-200 rounded-lg items-center justify-center">
+            <Feather name="globe" size={20} color="black" />
+          </View>
+        </View>
       </View>
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1 bg-white"
+        showsVerticalScrollIndicator={false}
+      >
         <View className="px-6 py-6 pb-40">
-          <View className="bg-white h-14 px-5 rounded-2xl flex-row items-center border border-gray-100 mb-8">
-            <Feather name="search" size={18} color="#94A3B8" />
+          <View className="bg-white h-14 px-5 rounded-lg flex-row items-center border border-gray-200 mb-6">
+            <Feather name="search" size={18} color="#9CA3AF" />
             <TextInput
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholder="Search public docs..."
-              placeholderTextColor="#94A3B8"
-              className="flex-1 ml-3 text-sm font-bold text-black"
+              placeholder="Search documents..."
+              placeholderTextColor="#D1D5DB"
+              className="flex-1 ml-3 text-base font-medium text-black"
             />
             {searchQuery.length > 0 && (
               <TouchableOpacity onPress={() => setSearchQuery("")}>
-                <Feather name="x" size={16} color="#94A3B8" />
+                <Feather name="x" size={18} color="#9CA3AF" />
               </TouchableOpacity>
             )}
           </View>
 
-          <Text className="text-[10px] font-black text-gray-400 uppercase tracking-[3px] mb-5 ml-1">Open Knowledge</Text>
+          <Text className="text-xs font-bold text-gray-600 uppercase tracking-widest mb-4 ml-1">
+            Open Knowledge
+          </Text>
 
           {loading ? (
             <View className="items-center py-12">
               <ActivityIndicator color="#000" />
-              <Text className="mt-3 text-gray-500">Loading...</Text>
+              <Text className="mt-3 text-gray-500">Fetching documents...</Text>
             </View>
-          ) : publicDocuments.length === 0 ? (
-            <View className="bg-white p-8 rounded-2xl border border-gray-100 items-center">
+          ) : visibleDocuments.length === 0 ? (
+            <View className="bg-white p-8 rounded-2xl border border-gray-200 items-center">
               <Feather name="file-text" size={32} color="#D1D5DB" />
               <Text className="text-black font-black mt-4">No public docs</Text>
               <Text className="text-gray-500 mt-2 text-center text-sm">
@@ -133,63 +151,53 @@ export default function PublicDocsScreen() {
               </Text>
             </View>
           ) : (
-            publicDocuments
-              .filter((doc: any) => doc.status !== "draft")
-              .map((doc: any) => {
-              const wsId = typeof doc.workspaceId === "string" ? doc.workspaceId : doc.workspaceId?._id;
+            visibleDocuments.map((doc) => {
               return (
-                <View key={doc._id} className="mb-5 rounded-3xl border border-gray-100 bg-white overflow-hidden">
-                  <View className="px-5 pt-5 pb-4 border-b border-gray-50">
-                    <View className="flex-row items-start justify-between gap-3">
-                      <View className="flex-1">
-                        <Text className="text-lg font-black text-black">{doc.title}</Text>
-                        <View className="flex-row items-center mt-2 gap-1">
-                          <View className="bg-black px-2 py-0.5 rounded-full">
-                            <Text className="text-white text-[9px] font-bold uppercase">{doc.visibility}</Text>
-                          </View>
+                <TouchableOpacity
+                  key={doc._id}
+                  className="mb-3 rounded-lg border border-gray-200 bg-white p-4"
+                  activeOpacity={0.85}
+                  onPress={() => handleOpen(doc._id)}
+                >
+                  <View className="flex-row items-start justify-between gap-3">
+                    <View className="flex-1 pr-2">
+                      <Text
+                        className="text-[16px] font-black text-black"
+                        numberOfLines={1}
+                      >
+                        {doc.title}
+                      </Text>
+                      <Text
+                        className="text-gray-500 text-[12px] mt-2 leading-5"
+                        numberOfLines={3}
+                      >
+                        {getExcerpt(doc.content)}
+                      </Text>
+
+                      <View className="flex-row items-center mt-3 gap-2">
+                        <View className="bg-black px-2 py-1 rounded-full">
+                          <Text className="text-white text-[9px] font-bold uppercase">
+                            {doc.visibility}
+                          </Text>
+                        </View>
+                        <View className="bg-gray-100 px-2 py-1 rounded-full">
+                          <Text
+                            className="text-gray-600 text-[9px] font-bold uppercase"
+                            numberOfLines={1}
+                          >
+                            {getWorkspaceLabel(doc)}
+                          </Text>
                         </View>
                       </View>
-                      <View className="flex-row gap-2">
-                        {canManage && (
-                          <TouchableOpacity
-                            onPress={() => handleDelete(doc)}
-                            disabled={actionLoading}
-                            className="w-9 h-9 rounded-full border border-red-100 items-center justify-center bg-red-50"
-                          >
-                            <Feather name="trash-2" size={14} color="#DC2626" />
-                          </TouchableOpacity>
-                        )}
-                        <TouchableOpacity
-                          onPress={() => handleOpen(doc._id, wsId)}
-                          disabled={actionLoading}
-                          className="w-9 h-9 rounded-full border border-gray-100 items-center justify-center"
-                        >
-                          {actionLoading ? (
-                            <ActivityIndicator size="small" color="#000" />
-                          ) : (
-                            <Feather name="book-open" size={14} color="black" />
-                          )}
-                        </TouchableOpacity>
+                    </View>
+
+                    <View className="items-center gap-2">
+                      <View className="w-9 h-9 rounded-full border border-gray-200 items-center justify-center">
+                        <Feather name="book-open" size={14} color="black" />
                       </View>
                     </View>
                   </View>
-                  <View className="h-[350px] bg-white">
-                    <WebView
-                      originWhitelist={["*"]}
-                      source={{ html: buildHtml(doc.content) }}
-                      style={{ backgroundColor: "transparent" }}
-                      scrollEnabled
-                      nestedScrollEnabled
-                      showsVerticalScrollIndicator={false}
-                      onShouldStartLoadWithRequest={(req) => {
-                        if (req.navigationType === "click" && req.url !== "about:blank") {
-                          return false;
-                        }
-                        return true;
-                      }}
-                    />
-                  </View>
-                </View>
+                </TouchableOpacity>
               );
             })
           )}
