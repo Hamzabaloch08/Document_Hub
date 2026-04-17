@@ -83,13 +83,13 @@ export default function PublicDocsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50" edges={["top"]}>
-      <View className="px-6 py-5 border-b border-slate-200 flex-row justify-between items-center bg-white">
+      <View className="px-6 py-5 flex-row justify-between items-center bg-white">
         <View>
-          <Text className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+          <Text className="text-xs font-bold text-gray-600 uppercase tracking-widest">
             Discover
           </Text>
           <Text
-            className="text-3xl font-black tracking-tight text-slate-900"
+            className="text-3xl font-black tracking-tight text-black"
             style={{ fontFamily: "Outfit" }}
           >
             Public Docs
@@ -106,9 +106,6 @@ export default function PublicDocsScreen() {
               </Text>
             </TouchableOpacity>
           )}
-          <View className="w-11 h-11 bg-white border border-slate-200 rounded-lg items-center justify-center">
-            <Feather name="globe" size={20} color="black" />
-          </View>
         </View>
       </View>
 
@@ -143,7 +140,7 @@ export default function PublicDocsScreen() {
               <Text className="mt-3 text-gray-500">Fetching documents...</Text>
             </View>
           ) : visibleDocuments.length === 0 ? (
-            <View className="bg-white p-8 rounded-2xl border border-gray-200 items-center">
+            <View className="bg-white p-8 rounded-lg items-center">
               <Feather name="file-text" size={32} color="#D1D5DB" />
               <Text className="text-black font-black mt-4">No public docs</Text>
               <Text className="text-gray-500 mt-2 text-center text-sm">
@@ -155,7 +152,7 @@ export default function PublicDocsScreen() {
               return (
                 <TouchableOpacity
                   key={doc._id}
-                  className="mb-3 rounded-lg border border-gray-200 bg-white p-4"
+                  className="mb-3 rounded-lg bg-white p-4"
                   activeOpacity={0.85}
                   onPress={() => handleOpen(doc._id)}
                 >
@@ -192,7 +189,7 @@ export default function PublicDocsScreen() {
                     </View>
 
                     <View className="items-center gap-2">
-                      <View className="w-9 h-9 rounded-full border border-gray-200 items-center justify-center">
+                      <View className="w-9 h-9 rounded-full items-center justify-center">
                         <Feather name="book-open" size={14} color="black" />
                       </View>
                     </View>
