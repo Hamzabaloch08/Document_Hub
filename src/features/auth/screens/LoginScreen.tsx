@@ -4,11 +4,15 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Keyboard,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
@@ -47,118 +51,144 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
+    <SafeAreaView className="flex-1 bg-gradient-to-b from-slate-900 to-slate-800">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        className="flex-1"
       >
-        <View className="px-8 py-16">
-          {/* Logo */}
-          <View className="items-center mb-12">
-            <View className="w-12 h-12 bg-black rounded-xl items-center justify-center shadow-lg shadow-gray-200">
-              <Feather name="layers" size={24} color="white" />
-            </View>
-            <Text className="mt-4 text-2xl font-black text-black tracking-[-1px]">
-              DocuHub.
-            </Text>
-          </View>
-
-          <Text className="text-[32px] font-black text-black leading-[38px] tracking-[-1px] text-center">
-            Log in.
-          </Text>
-          <Text className="text-gray-400 text-base font-medium mt-3 text-center px-6">
-            Enter your credentials to access the hub.
-          </Text>
-
-          {/* Form - Restored Boxed Style */}
-          <View className="mt-12">
-            {error && (
-              <View className="mb-6 bg-red-50 p-4 rounded-2xl border border-red-100 flex-row items-center">
-                <Feather name="alert-circle" size={18} color="#EF4444" />
-                <Text className="text-red-600 text-sm font-bold ml-3 flex-1">
-                  {error}
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View className="px-6 py-8">
+              {/* Logo & Branding */}
+              <View className="items-center mb-12">
+                <View className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-3xl items-center justify-center shadow-2xl mb-4">
+                  <Feather name="layers" size={32} color="white" />
+                </View>
+                <Text className="text-4xl font-black text-white" style={{ fontFamily: 'Outfit' }}>
+                  DocuHub
+                </Text>
+                <Text className="text-blue-300 text-sm font-semibold mt-2 tracking-wider">
+                  Smart Documentation Hub
                 </Text>
               </View>
-            )}
 
-            <View className="mb-5">
-              <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-[2px] mb-2 ml-1">
-                Email address
-              </Text>
-              <View className="bg-gray-50 border border-gray-100 h-14 px-5 rounded-2xl flex-row items-center">
-                <TextInput
-                  className="flex-1 text-base font-bold text-black h-full"
-                  placeholder="name@company.com"
-                  placeholderTextColor="#94A3B8"
-                  value={email}
-                  onChangeText={setEmail}
-                  autoCapitalize="none"
-                />
+              {/* Heading */}
+              <View className="mb-8">
+                <Text className="text-white text-2xl font-bold text-center" style={{ fontFamily: 'Outfit' }}>
+                  Welcome Back
+                </Text>
+                <Text className="text-blue-200 text-sm font-medium mt-2 text-center">
+                  Sign in to your account
+                </Text>
               </View>
-            </View>
 
-            <View className="mb-8">
-              <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-[2px] mb-2 ml-1">
-                Password
-              </Text>
-              <View className="bg-gray-50 border border-gray-100 h-14 px-5 rounded-2xl flex-row items-center">
-                <TextInput
-                  className="flex-1 text-base font-bold text-black h-full"
-                  placeholder="*********"
-                  placeholderTextColor="#94A3B8"
-                  secureTextEntry={!showPassword}
-                  value={password}
-                  onChangeText={setPassword}
-                  autoCapitalize="sentences"
-                  autoCorrect={false}
-                  autoComplete="off"
-                  keyboardType={showPassword ? "visible-password" : "default"}
-                />
+              {/* Main Card */}
+              <View className="bg-white rounded-3xl shadow-2xl p-8 mb-6">
+                {error && (
+                  <View className="mb-6 bg-red-50 p-4 rounded-xl border border-red-200 flex-row items-start gap-3">
+                    <Feather name="alert-circle" size={20} color="#DC2626" />
+                    <Text className="text-red-700 text-sm font-semibold flex-1">
+                      {error}
+                    </Text>
+                  </View>
+                )}
+
+                {/* Email Input Card */}
+                <View className="mb-6">
+                  <Text className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">
+                    Email Address
+                  </Text>
+                  <View className="bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-3 flex-row items-center">
+                    <Feather name="mail" size={18} color="#0EA5E9" />
+                    <TextInput
+                      className="flex-1 text-base text-slate-900 ml-3 font-medium"
+                      placeholder="name@company.com"
+                      placeholderTextColor="#CBD5E1"
+                      value={email}
+                      onChangeText={setEmail}
+                      autoCapitalize="none"
+                      keyboardType="email-address"
+                      editable={!loading}
+                    />
+                  </View>
+                </View>
+
+                {/* Password Input Card */}
+                <View className="mb-6">
+                  <Text className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">
+                    Password
+                  </Text>
+                  <View className="bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-3 flex-row items-center">
+                    <Feather name="lock" size={18} color="#0EA5E9" />
+                    <TextInput
+                      className="flex-1 text-base text-slate-900 ml-3 font-medium"
+                      placeholder="Enter your password"
+                      placeholderTextColor="#CBD5E1"
+                      secureTextEntry={!showPassword}
+                      value={password}
+                      onChangeText={setPassword}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      autoComplete="off"
+                      editable={!loading}
+                    />
+                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                      <Feather
+                        name={showPassword ? "eye" : "eye-off"}
+                        size={18}
+                        color="#0EA5E9"
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Forgot Password Link */}
+                <View className="flex-row justify-end mb-6">
+                  <TouchableOpacity onPress={() => router.push("/(auth)/forgot-password")}>
+                    <Text className="text-xs font-bold text-blue-600 tracking-wider">
+                      Forgot Password?
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Sign In Button */}
                 <TouchableOpacity
-                  onPress={() => setShowPassword(!showPassword)}
+                  onPress={() => handleLogin()}
+                  activeOpacity={0.8}
+                  disabled={loading}
+                  className={`h-14 rounded-2xl items-center justify-center flex-row gap-2 shadow-lg transition ${
+                    loading
+                      ? "bg-slate-300 shadow-none"
+                      : "bg-gradient-to-r from-blue-600 to-blue-700 shadow-blue-300"
+                  }`}
                 >
-                  <Feather
-                    name={showPassword ? "eye" : "eye-off"}
-                    size={18}
-                    color="#94A3B8"
-                  />
-                </TouchableOpacity>
-              </View>
-              <View className="flex flex-row justify-end mt-2 pr-1">
-                {/* Forgot Password Link - RIGHT SIDE */}
-                <TouchableOpacity
-                  onPress={() => router.push("/(auth)/forgot-password")}
-                >
-                  <Text className="text-[10px] font-black text-black uppercase tracking-[1px]">
-                    Forgot Password?
+                  {loading && <Feather name="loader" size={18} color="white" />}
+                  <Text className="text-white text-base font-bold tracking-wider">
+                    {loading ? "Signing In..." : "Sign In"}
                   </Text>
                 </TouchableOpacity>
               </View>
+
+              {/* Signup Link */}
+              <View className="mt-8 items-center">
+                <Text className="text-slate-300 text-sm font-medium">
+                  Don't have an account?{" "}
+                  <Text
+                    className="text-blue-600 font-bold"
+                    onPress={() => router.replace("/(auth)/signup")}
+                  >
+                    Sign Up
+                  </Text>
+                </Text>
+              </View>
             </View>
-
-            <TouchableOpacity
-              onPress={() => handleLogin()}
-              activeOpacity={0.8}
-              disabled={loading}
-              className={`h-14 rounded-2xl items-center justify-center shadow-lg mt-4 ${
-                loading ? "bg-gray-400 shadow-none" : "bg-black shadow-gray-200"
-              }`}
-            >
-              <Text className="text-white text-[15px] font-black uppercase tracking-[2px]">
-                {loading ? "Signing In..." : "Sign In"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <View className="mt-12 items-center">
-            <TouchableOpacity onPress={() => router.push("/signup")}>
-              <Text className="text-gray-400 font-bold uppercase tracking-[1px] text-[10px]">
-                New Member? <Text className="text-black">Join now</Text>
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </ScrollView>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
