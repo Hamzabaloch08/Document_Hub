@@ -140,7 +140,7 @@ export default function PublicDocsScreen() {
               <Text className="mt-3 text-gray-500">Fetching documents...</Text>
             </View>
           ) : visibleDocuments.length === 0 ? (
-            <View className="bg-white p-8 rounded-lg items-center">
+            <View className="bg-white p-8 rounded-lg border border-gray-200 items-center">
               <Feather name="file-text" size={32} color="#D1D5DB" />
               <Text className="text-black font-black mt-4">No public docs</Text>
               <Text className="text-gray-500 mt-2 text-center text-sm">
@@ -152,7 +152,7 @@ export default function PublicDocsScreen() {
               return (
                 <TouchableOpacity
                   key={doc._id}
-                  className="mb-3 rounded-lg bg-white p-4"
+                  className="mb-3 rounded-lg bg-white p-4 border border-gray-200"
                   activeOpacity={0.85}
                   onPress={() => handleOpen(doc._id)}
                 >
