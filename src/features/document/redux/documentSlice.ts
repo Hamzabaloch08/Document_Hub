@@ -3,6 +3,7 @@ import { DocumentItem } from "../types/documentTypes";
 import {
     createDocument,
     deleteDocument,
+    fetchDraftDocuments,
     fetchPublicDocuments,
     fetchRecentDocuments,
     fetchWorkspaceDocuments,
@@ -15,8 +16,11 @@ interface DocumentState {
   workspaceDocuments: DocumentItem[];
   publicDocuments: DocumentItem[];
   recentDocuments: DocumentItem[];
+  draftDocuments: DocumentItem[];
   loading: boolean;
   actionLoading: boolean;
+  deletingDocumentId: string | null;
+  openingDocumentId: string | null;
   error: string | null;
   successMessage: string | null;
   activeWorkspaceId: string | null;
@@ -26,8 +30,11 @@ const initialState: DocumentState = {
   workspaceDocuments: [],
   publicDocuments: [],
   recentDocuments: [],
+  draftDocuments: [],
   loading: false,
   actionLoading: false,
+  deletingDocumentId: null,
+  openingDocumentId: null,
   error: null,
   successMessage: null,
   activeWorkspaceId: null,
@@ -115,31 +122,60 @@ const documentSlice = createSlice({
         state.error = action.payload || "Failed to fetch recent documents";
       })
 
+      .addCase(fetchDraftDocuments.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchDraftDocuments.fulfilled, (state, action) => {
+        state.loading = false;
+        state.draftDocuments = action.payload;
+      })
+      .addCase(fetchDraftDocuments.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || "Failed to fetch draft documents";
+      })
+
       .addCase(createDocument.pending, (state) => {
         state.actionLoading = true;
+        state.deletingDocumentId = null;
+        state.openingDocumentId = null;
         state.error = null;
         state.successMessage = null;
       })
       .addCase(createDocument.fulfilled, (state, action) => {
         state.actionLoading = false;
+        state.deletingDocumentId = null;
+        state.openingDocumentId = null;
         state.workspaceDocuments = [
           action.payload,
           ...state.workspaceDocuments,
         ];
+        if (action.payload.status === "draft") {
+          state.draftDocuments = mergeDocument(
+            state.draftDocuments,
+            action.payload,
+          );
+        }
         state.successMessage = "Document created successfully";
       })
       .addCase(createDocument.rejected, (state, action) => {
         state.actionLoading = false;
+        state.deletingDocumentId = null;
+        state.openingDocumentId = null;
         state.error = action.payload || "Failed to create document";
       })
 
       .addCase(updateDocument.pending, (state) => {
         state.actionLoading = true;
+        state.deletingDocumentId = null;
+        state.openingDocumentId = null;
         state.error = null;
         state.successMessage = null;
       })
       .addCase(updateDocument.fulfilled, (state, action) => {
         state.actionLoading = false;
+        state.deletingDocumentId = null;
+        state.openingDocumentId = null;
         state.workspaceDocuments = mergeDocument(
           state.workspaceDocuments,
           action.payload,
@@ -152,20 +188,34 @@ const documentSlice = createSlice({
           state.recentDocuments,
           action.payload,
         );
+        if (action.payload.status === "draft") {
+          state.draftDocuments = mergeDocument(
+            state.draftDocuments,
+            action.payload,
+          );
+        } else {
+          state.draftDocuments = state.draftDocuments.filter(
+            (doc) => doc._id !== action.payload._id,
+          );
+        }
         state.successMessage = "Document updated successfully";
       })
       .addCase(updateDocument.rejected, (state, action) => {
         state.actionLoading = false;
+        state.deletingDocumentId = null;
+        state.openingDocumentId = null;
         state.error = action.payload || "Failed to update document";
       })
 
-      .addCase(deleteDocument.pending, (state) => {
+      .addCase(deleteDocument.pending, (state, action) => {
         state.actionLoading = true;
+        state.deletingDocumentId = action.meta.arg;
         state.error = null;
         state.successMessage = null;
       })
       .addCase(deleteDocument.fulfilled, (state, action) => {
         state.actionLoading = false;
+        state.deletingDocumentId = null;
         state.workspaceDocuments = state.workspaceDocuments.filter(
           (doc) => doc._id !== action.payload.id,
         );
@@ -175,23 +225,30 @@ const documentSlice = createSlice({
         state.recentDocuments = state.recentDocuments.filter(
           (doc) => doc._id !== action.payload.id,
         );
+        state.draftDocuments = state.draftDocuments.filter(
+          (doc) => doc._id !== action.payload.id,
+        );
         state.successMessage = action.payload.message;
       })
       .addCase(deleteDocument.rejected, (state, action) => {
         state.actionLoading = false;
+        state.deletingDocumentId = null;
         state.error = action.payload || "Failed to delete document";
       })
 
-      .addCase(markDocumentAsRead.pending, (state) => {
+      .addCase(markDocumentAsRead.pending, (state, action) => {
         state.actionLoading = true;
+        state.openingDocumentId = action.meta.arg.documentId;
         state.error = null;
       })
       .addCase(markDocumentAsRead.fulfilled, (state, action) => {
         state.actionLoading = false;
+        state.openingDocumentId = null;
         state.successMessage = action.payload;
       })
       .addCase(markDocumentAsRead.rejected, (state, action) => {
         state.actionLoading = false;
+        state.openingDocumentId = null;
         state.error = action.payload || "Failed to mark document as read";
       });
   },

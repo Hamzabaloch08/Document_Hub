@@ -13,6 +13,16 @@ api.interceptors.request.use(async (config) => {
   const token = await AsyncStorage.getItem("tokenGenerate");
   if (token) {
     config.headers.mobiletoken = token;
+    if (__DEV__) {
+      console.log("[Auth] Token injected:", {
+        tokenLength: token.length,
+        endpoint: config.url,
+      });
+    }
+  } else {
+    if (__DEV__) {
+      console.warn("[Auth] No token found in AsyncStorage for endpoint:", config.url);
+    }
   }
 
   return config;
@@ -23,10 +33,12 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (__DEV__) {
-      console.warn(
+      const token = error?.config?.headers?.mobiletoken ? "✓ Present" : "✗ Missing";
+      console.error(
         `[API Error] ${error?.config?.method?.toUpperCase()} ${error?.config?.url}`,
         {
           status: error?.response?.status,
+          token,
           data: error?.response?.data,
         },
       );

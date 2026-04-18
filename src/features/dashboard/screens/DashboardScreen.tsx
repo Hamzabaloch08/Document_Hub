@@ -1,28 +1,26 @@
 import {
-    clearDocumentError,
-    clearDocumentSuccess,
+  clearDocumentError,
+  clearDocumentSuccess,
 } from "@/src/features/document/redux/documentSlice";
 import {
-    fetchPublicDocuments,
-    fetchRecentDocuments,
-    markDocumentAsRead,
+  fetchPublicDocuments,
+  fetchRecentDocuments,
+  markDocumentAsRead,
 } from "@/src/features/document/redux/documentThunks";
 import { DocumentItem } from "@/src/features/document/types/documentTypes";
-import {
-    fetchUserWorkspaces,
-} from "@/src/features/workspace/redux/workspaceThunks";
+import { fetchUserWorkspaces } from "@/src/features/workspace/redux/workspaceThunks";
 import { AppDispatch, RootState } from "@/src/store/store";
 import { Feather } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
@@ -41,9 +39,16 @@ export default function DashboardScreen() {
   const dispatch = useDispatch<AppDispatch>();
   const nav = useRouter();
 
-  const { publicDocuments, recentDocuments, loading: docsLoading, error, successMessage } =
-    useSelector((state: RootState) => state.document);
-  const { workspaces, loading: wsLoading } = useSelector((state: RootState) => state.workspace);
+  const {
+    publicDocuments,
+    recentDocuments,
+    loading: docsLoading,
+    error,
+    successMessage,
+  } = useSelector((state: RootState) => state.document);
+  const { workspaces, loading: wsLoading } = useSelector(
+    (state: RootState) => state.workspace,
+  );
 
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>("");
@@ -101,118 +106,124 @@ export default function DashboardScreen() {
   const isEditor = userRole === "editor";
   const isViewer = userRole === "viewer" || !userRole;
 
-  // Admin: show all workspaces (max 3); Editor: show assigned workspaces (max 3)
   const displayWorkspaces = workspaces.slice(0, 3);
+  const dashboardDocuments = (isViewer ? publicDocuments : recentDocuments)
+    .filter((doc) => doc.status !== "draft")
+    .slice(0, 5);
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
-      {/* Header */}
-      <View className="px-6 py-6 flex-row justify-between items-center bg-white border-b border-gray-50">
-        <View>
-          <Text className="text-[10px] font-black text-gray-300 uppercase tracking-[2px]">
+      <View className="px-6 py-5 flex-row justify-between items-start bg-white border-b border-gray-100">
+        <View className="flex-1">
+          <Text className="text-[11px] font-black text-gray-300 uppercase tracking-[2px] mb-1">
             DocuHub
           </Text>
-          <Text className="text-[24px] font-black tracking-tighter text-black">
-            {isViewer ? "Explore Docs." : isAdmin ? "Admin Dashboard." : "Workspace Hub."}
+          <Text className="text-[26px] font-black tracking-tighter text-black leading-8">
+            {isViewer
+              ? "Explore Docs."
+              : isAdmin
+                ? "Admin Dashboard."
+                : "Workspace Hub."}
           </Text>
+          {userName ? (
+            <Text className="text-[12px] font-semibold text-gray-500 mt-1">
+              Welcome back, {userName}
+            </Text>
+          ) : null}
         </View>
         <View className="items-end gap-1">
           <View
-            className={`px-3 py-1 rounded-full ${
-              isAdmin
-                ? "bg-black"
-                : isEditor
-                ? "bg-gray-800"
-                : "bg-gray-100"
+            className={`px-3 py-1.5 rounded-full ${
+              isAdmin ? "bg-black" : isEditor ? "bg-gray-800" : "bg-gray-100"
             }`}
           >
             <Text
               className={`text-[9px] font-black uppercase tracking-[1.5px] ${
-                isAdmin || isEditor ? "text-white" : "text-gray-500"
+                isAdmin || isEditor ? "text-white" : "text-gray-600"
               }`}
             >
               {userRole || "viewer"}
             </Text>
           </View>
-          {userName ? (
-            <Text className="text-[10px] font-bold text-gray-400">{userName}</Text>
-          ) : null}
         </View>
       </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="px-6 py-6 pb-40">
-
-          {/* ── ADMIN / EDITOR: Stats ── */}
-          {!isViewer && (
-            <View className="flex-row gap-4 mb-8">
-              <View className="flex-1 bg-black p-5 rounded-2xl">
-                <Text className="text-3xl font-black text-white">
-                  {workspaces.length}
-                </Text>
-                <Text className="text-[10px] font-black text-white/60 uppercase tracking-[1px] mt-1">
-                  {isAdmin ? "Total Hubs" : "My Hubs"}
-                </Text>
-              </View>
-              <View className="flex-1 bg-white p-5 rounded-2xl border border-gray-100">
-                <Text className="text-3xl font-black text-black">
-                  {recentDocuments.length}
-                </Text>
-                <Text className="text-[10px] font-black text-gray-400 uppercase tracking-[1px] mt-1">
-                  Total Docs
-                </Text>
-              </View>
+          <View className="flex-row gap-3 mb-6">
+            <View className="flex-1 bg-black p-5 rounded-2xl">
+              <Text className="text-4xl font-black text-white">
+                {workspaces.length}
+              </Text>
+              <Text className="text-[9px] font-black text-white/70 uppercase tracking-[1px] mt-2">
+                {isViewer ? "Workspaces" : isAdmin ? "Total Hubs" : "My Hubs"}
+              </Text>
             </View>
-          )}
+            <View className="flex-1 bg-gray-50 p-5 rounded-2xl border border-gray-100">
+              <Text className="text-4xl font-black text-black">
+                {isViewer ? publicDocuments.length : recentDocuments.length}
+              </Text>
+              <Text className="text-[9px] font-black text-gray-500 uppercase tracking-[1px] mt-2">
+                {isViewer ? "Public Docs" : "Recent Docs"}
+              </Text>
+            </View>
+          </View>
 
-          {/* ── VIEWER: Hero CTA ── */}
           {isViewer && (
             <TouchableOpacity
-              activeOpacity={0.9}
-              className="bg-black p-8 rounded-2xl mb-8"
+              activeOpacity={0.85}
+              className="bg-black p-6 rounded-2xl mb-6"
               onPress={() => nav.push("/(tabs)/public")}
             >
-              <Text className="text-white text-[22px] font-black tracking-tight leading-7">
+              <Text className="text-white text-[20px] font-black tracking-tight leading-7 mb-3">
                 Browse Public{"\n"}Knowledge Base.
               </Text>
-              <View className="bg-white/20 px-2 py-0.5 rounded-lg self-start mt-3">
-                <Text className="text-white text-[9px] font-bold uppercase tracking-[1px]">
+              <View className="bg-white/20 px-2.5 py-1 rounded-lg self-start">
+                <Text className="text-white text-[8px] font-bold uppercase tracking-[1px]">
                   Public Access
                 </Text>
               </View>
             </TouchableOpacity>
           )}
 
-          {/* ── ADMIN/EDITOR: Primary CTA ── */}
           {!isViewer && (
             <TouchableOpacity
-              activeOpacity={0.9}
-              className="bg-black p-8 rounded-2xl mb-8 flex-row items-center justify-between"
+              activeOpacity={0.85}
+              className="bg-black p-6 rounded-2xl mb-6 flex-row items-center justify-between"
               onPress={() => nav.push("/(tabs)/workspaces")}
             >
-              <View className="flex-1">
-                <Text className="text-white text-[20px] font-black tracking-tight leading-7">
-                  {isAdmin ? "Unified System\nManagement." : "Continue Working\non Documents."}
+              <View className="flex-1 pr-4">
+                <Text className="text-white text-[18px] font-black tracking-tight leading-6 mb-2">
+                  {isAdmin
+                    ? "Unified System\nManagement."
+                    : "Continue Working\non Documents."}
                 </Text>
-                <View className="bg-white/20 px-2 py-0.5 rounded-lg self-start mt-3">
-                  <Text className="text-white text-[9px] font-bold uppercase tracking-[1px]">
+                <View className="bg-white/20 px-2.5 py-1 rounded-lg self-start">
+                  <Text className="text-white text-[8px] font-bold uppercase tracking-[1px]">
                     {isAdmin ? "Admin Controls" : "Editor Access"}
                   </Text>
                 </View>
               </View>
-              <Feather name={isAdmin ? "layers" : "edit-3"} size={32} color="white" />
+              <View className="w-12 h-12 items-center justify-center">
+                <Feather
+                  name={isAdmin ? "layers" : "edit-3"}
+                  size={28}
+                  color="white"
+                />
+              </View>
             </TouchableOpacity>
           )}
 
-          {/* ── WORKSPACES (Admin/Editor) ── */}
           {!isViewer && displayWorkspaces.length > 0 && (
             <>
-              <View className="flex-row justify-between items-center mb-4 px-1">
+              <View className="flex-row justify-between items-center mb-4 px-0.5">
                 <Text className="text-[10px] font-black text-gray-400 uppercase tracking-[3px]">
                   {isAdmin ? "Featured Hubs" : "Assigned Hubs"}
                 </Text>
-                <TouchableOpacity onPress={() => nav.push("/(tabs)/workspaces")}>
-                  <Text className="text-xs font-bold text-black border-b border-gray-100 pb-0.5">
+                <TouchableOpacity
+                  onPress={() => nav.push("/(tabs)/workspaces")}
+                >
+                  <Text className="text-[12px] font-bold text-black border-b border-black">
                     Explore all
                   </Text>
                 </TouchableOpacity>
@@ -221,24 +232,32 @@ export default function DashboardScreen() {
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                className="-mx-6 px-6 mb-8"
+                className="-mx-6 px-8 py-2 mb-8"
+                scrollEventThrottle={16}
               >
                 {wsLoading ? (
                   <ActivityIndicator color="#000" className="py-8 px-8" />
                 ) : (
-                  displayWorkspaces.map((ws) => (
+                  displayWorkspaces.map((ws, idx) => (
                     <TouchableOpacity
                       key={ws._id}
-                      className="w-[160px] bg-white p-5 rounded-2xl border border-gray-100 mr-3 shadow-sm "
-                      onPress={() => nav.push(`/(workspace)/detail?id=${ws._id}`)}
+                      className={`w-[170px] bg-white p-5 rounded-2xl border border-gray-100 shadow-sm active:opacity-70 ${
+                        idx !== displayWorkspaces.length - 1 ? "mr-4" : "mr-6"
+                      }`}
+                      onPress={() =>
+                        nav.push(`/(workspace)/detail?id=${ws._id}`)
+                      }
                     >
-                      <View className="w-10 h-10 bg-gray-50 rounded-xl items-center justify-center mb-3">
-                        <Feather name="briefcase" size={18} color="black" />
+                      <View className="w-10 h-10 bg-gray-50 rounded-lg items-center justify-center mb-3">
+                        <Feather name="briefcase" size={18} color="#000" />
                       </View>
-                      <Text className="text-sm font-black text-black" numberOfLines={1}>
+                      <Text
+                        className="text-[13px] font-black text-black leading-4"
+                        numberOfLines={2}
+                      >
                         {ws.name}
                       </Text>
-                      <Text className="text-[9px] font-bold uppercase tracking-[1px] text-gray-400 mt-1">
+                      <Text className="text-[8px] font-bold uppercase tracking-wider text-gray-400 mt-2">
                         {ws.visibility || "private"}
                       </Text>
                     </TouchableOpacity>
@@ -248,14 +267,13 @@ export default function DashboardScreen() {
             </>
           )}
 
-          {/* ── CONTENT SECTION ── */}
-          <View className="flex-row justify-between items-center mb-4 px-1">
+          <View className="flex-row justify-between items-center mb-4 px-0.5">
             <Text className="text-[10px] font-black text-gray-400 uppercase tracking-[3px]">
               {isViewer ? "Shared Documents" : "Recent Views"}
             </Text>
             {isViewer && (
               <TouchableOpacity onPress={() => nav.push("/(tabs)/public")}>
-                <Text className="text-xs font-bold text-black border-b border-gray-100 pb-0.5">
+                <Text className="text-[12px] font-bold text-black border-b border-black">
                   Search all
                 </Text>
               </TouchableOpacity>
@@ -264,48 +282,62 @@ export default function DashboardScreen() {
 
           {docsLoading ? (
             <ActivityIndicator color="#000" className="py-8" />
-          ) : (isViewer ? publicDocuments.slice(0, 5) : recentDocuments).length === 0 ? (
-            <View className="bg-white p-8 rounded-2xl border border-gray-100 items-center">
-              <Text className="font-black text-black">No documents available</Text>
-              <Text className="mt-2 text-gray-500 text-center text-sm">
-                {isViewer ? "The public knowledge base is empty." : "You haven't viewed any documents recently."}
+          ) : dashboardDocuments.length === 0 ? (
+            <View className="bg-gray-50 p-8 rounded-2xl border border-gray-100 items-center">
+              <Feather name="inbox" size={28} color="#999" />
+              <Text className="font-black text-black mt-3">
+                No documents available
+              </Text>
+              <Text className="mt-2 text-gray-500 text-center text-[13px]">
+                {isViewer
+                  ? "The public knowledge base is empty."
+                  : "You haven't viewed any documents recently."}
               </Text>
             </View>
           ) : (
-            (isViewer ? publicDocuments.slice(0, 5) : recentDocuments).map((doc) => (
+            dashboardDocuments.map((doc) => (
               <TouchableOpacity
                 key={doc._id}
-                className="flex-row items-center bg-white p-4 rounded-2xl border border-gray-100 mb-3 shadow-sm "
+                className="flex-row items-center bg-white p-4 rounded-2xl border border-gray-100 mb-2 active:opacity-70"
                 onPress={() => {
                   dispatch(markDocumentAsRead({ documentId: doc._id }));
                   const wsId = getWorkspaceId(doc);
                   if (wsId) {
-                    nav.push(`/(workspace)/detail?id=${wsId}&docId=${doc._id}`);
+                    nav.push(
+                      `/(workspace)/doc-detail?workspaceId=${wsId}&docId=${doc._id}`,
+                    );
                   }
                 }}
               >
-                <View className="w-12 h-12 bg-gray-50 rounded-xl items-center justify-center">
-                  <Feather name="file-text" size={18} color="black" />
+                <View className="w-11 h-11 bg-gray-50 rounded-lg items-center justify-center flex-shrink-0">
+                  <Feather name="file-text" size={18} color="#000" />
                 </View>
-                <View className="ml-4 flex-1">
-                  <Text className="text-base font-black text-black leading-5" numberOfLines={1}>
+                <View className="ml-3 flex-1">
+                  <Text
+                    className="text-[14px] font-black text-black leading-4"
+                    numberOfLines={1}
+                  >
                     {doc.title}
                   </Text>
-                  <Text className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">
+                  <Text className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">
                     {doc.visibility} • {getWorkspaceLabel(doc)}
                   </Text>
                 </View>
-                <Feather name="chevron-right" size={16} color="#D1D5DB" />
+                <Feather
+                  name="chevron-right"
+                  size={16}
+                  color="#D1D5DB"
+                  className="ml-2 flex-shrink-0"
+                />
               </TouchableOpacity>
             ))
           )}
         </View>
       </ScrollView>
 
-      {/* FAB - Admin only (create workspace or doc) */}
       {isAdmin && (
         <TouchableOpacity
-          className="absolute bottom-24 right-6 w-14 h-14 bg-black rounded-2xl items-center justify-center shadow-lg "
+          className="absolute bottom-32 right-6 w-14 h-14 bg-black rounded-full items-center justify-center shadow-lg active:opacity-80"
           onPress={() => nav.push("/(tabs)/workspaces")}
         >
           <Feather name="plus" size={24} color="white" />

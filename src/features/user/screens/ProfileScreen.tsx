@@ -1,19 +1,25 @@
-import { fetchDraftDocuments } from "@/src/features/document/redux/documentThunks";
-import { AppDispatch, RootState } from "@/src/store/store";
 import { Feather } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import {
+    ActivityIndicator,
+    Alert,
+    Image,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/src/store/store";
+import { fetchDraftDocuments, deleteDocument, updateDocument } from "@/src/features/document/redux/documentThunks";
 
 export default function ProfileScreen() {
   const dispatch = useDispatch<AppDispatch>();
-  const { draftDocuments } = useSelector((s: RootState) => s.document);
+  const { draftDocuments, loading: docsLoading } = useSelector((s: RootState) => s.document);
   const [parseData, setParseData] = useState<any>(null);
-  const isViewer =
-    String(parseData?.role || "viewer").toLowerCase() === "viewer";
 
   useEffect(() => {
     const getUserData = async () => {
@@ -33,168 +39,176 @@ export default function ProfileScreen() {
     dispatch(fetchDraftDocuments());
   }, [dispatch]);
 
+  const handleDeleteDraft = (docId: string, title: string) => {
+    Alert.alert("Delete Draft", `Delete "${title}"?`, [
+      { text: "Cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          await dispatch(deleteDocument(docId));
+          dispatch(fetchDraftDocuments());
+        }
+      }
+    ]);
+  };
+
+  const handlePublishDraft = (docId: string, title: string) => {
+    Alert.alert("Publish Draft", `Publish "${title}"?`, [
+      { text: "Cancel" },
+      {
+        text: "Publish",
+        onPress: async () => {
+          const result = await dispatch(
+            updateDocument({
+              id: docId,
+              data: { status: "published" }
+            })
+          );
+          if (updateDocument.fulfilled.match(result)) {
+            Alert.alert("Success", "Document published!");
+            dispatch(fetchDraftDocuments());
+          } else {
+            Alert.alert("Error", "Failed to publish document");
+          }
+        }
+      }
+    ]);
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
-      {/* Header */}
-      <View className="px-6 py-6 border-b border-gray-200 flex-row justify-between items-end">
+      {/* 1. Header */}
+      <View className="px-8 py-8 border-b border-gray-100 flex-row justify-between items-end bg-white">
         <View>
-          <Text className="text-sm font-bold uppercase tracking-widest text-gray-600">
-            Welcome Back
+          <Text className="text-[10px] font-black uppercase tracking-[2px] text-gray-300">
+            Identity
           </Text>
-          <Text
-            className="text-3xl font-black tracking-tight text-black"
-            style={{ fontFamily: "Outfit" }}
-          >
-            {parseData?.username || "Profile"}
+          <Text className="text-[28px] font-black tracking-tighter text-black">
+            Profile.
           </Text>
         </View>
-        <TouchableOpacity
-          className="pb-1 w-10 h-10 bg-gray-100 rounded-lg items-center justify-center"
-          onPress={() => router.push("/(user)/settings")}
-        >
+        <TouchableOpacity className="pb-1">
           <Feather name="settings" size={20} color="black" />
         </TouchableOpacity>
       </View>
 
       <ScrollView
-        className="flex-1"
+        className="flex-1 bg-white"
         showsVerticalScrollIndicator={false}
       >
         <View className="px-6 py-8">
-          {/* User Profile Card */}
-          <View className="bg-white rounded-lg p-6 border border-gray-200 mb-8">
-            <View className="flex-row items-center mb-6">
-              <View className="w-20 h-20 bg-black items-center justify-center rounded-lg overflow-hidden">
-                {parseData?.image ? (
-                  <Image
-                    source={{ uri: parseData.image }}
-                    style={{ width: 80, height: 80, borderRadius: 8 }}
-                  />
-                ) : (
-                  <Text className="text-white text-3xl font-black">
-                    {parseData?.username
-                      ? parseData.username.substring(0, 2).toUpperCase()
-                      : "US"}
-                  </Text>
-                )}
-              </View>
-              <View className="ml-4 flex-1">
-                <Text
-                  className="text-xl font-bold text-black"
-                  numberOfLines={1}
-                >
-                  {parseData?.username || "Loading..."}
+          {/* 2. User Card - Normal Radius */}
+          <View className="flex-row items-center bg-white p-6 rounded-2xl border border-gray-100 shadow-sm shadow-gray-50 mb-10">
+            <View className="w-16 h-16 bg-black items-center justify-center rounded-xl overflow-hidden">
+              {parseData?.image ? (
+                <Image
+                  source={{ uri: parseData.image }}
+                  style={{ width: 64, height: 64, borderRadius: 12 }}
+                />
+              ) : (
+                <Text className="text-white text-2xl font-black">
+                  {parseData?.username
+                    ? parseData.username.substring(0, 2).toUpperCase()
+                    : "US"}
                 </Text>
-                <Text
-                  className="text-sm font-medium text-gray-600 mt-1"
-                  numberOfLines={1}
-                >
-                  {parseData?.email || "Loading..."}
-                </Text>
-                <View className="flex-row items-center mt-2 gap-2">
-                  <View className="bg-gray-200 px-3 py-1 rounded-full">
-                    <Text className="text-xs font-bold text-black capitalize">
-                      {parseData?.role || "Viewer"}
-                    </Text>
-                  </View>
-                </View>
-              </View>
+              )}
+            </View>
+            <View className="ml-5 flex-1 pr-2">
+              <Text className="text-xl font-black text-black" numberOfLines={1}>
+                {parseData?.username || "Loading..."}
+              </Text>
+              <Text
+                className="text-[12px] font-bold text-gray-400 mt-1"
+                numberOfLines={1}
+              >
+                {parseData?.role || "Loading..."} •{" "}
+                {parseData?.email || "Loading..."}
+              </Text>
             </View>
             <TouchableOpacity
               onPress={() => router.push("/(user)/edit-profile")}
-              className="bg-gray-100 h-12 rounded-lg items-center justify-center border border-gray-200 flex-row gap-2"
+              className="w-10 h-10 bg-gray-50 rounded-xl items-center justify-center border border-gray-100"
             >
-              <Feather name="edit-3" size={16} color="black" />
-              <Text className="text-black font-bold text-sm">Edit Profile</Text>
+              <Feather name="edit-2" size={16} color="black" />
             </TouchableOpacity>
           </View>
 
-          {/* Stats Cards */}
+          {/* 3. Stats Grid - Normal Radius */}
           <View className="flex-row gap-4 mb-10">
-            <View className="flex-1 bg-white rounded-lg p-6 border border-gray-200">
-              <View className="bg-gray-100 w-12 h-12 rounded-lg items-center justify-center mb-3">
-                <Feather name="folder" size={20} color="black" />
-              </View>
+            <View className="flex-1 bg-white border border-gray-100 p-5 rounded-2xl shadow-sm shadow-gray-50">
               <Text className="text-3xl font-black text-black">12</Text>
-              <Text className="text-xs font-semibold text-gray-600 mt-2 tracking-wider">
+              <Text className="text-[10px] font-black uppercase tracking-[1px] mt-1 text-gray-400">
                 Workspaces
               </Text>
             </View>
-            <View className="flex-1 bg-white rounded-lg p-6 border border-gray-200">
-              <View className="bg-gray-100 w-12 h-12 rounded-lg items-center justify-center mb-3">
-                <Feather name="file-text" size={20} color="black" />
-              </View>
-              <Text className="text-3xl font-black text-black">
-                {draftDocuments.length}
-              </Text>
-              <Text className="text-xs font-semibold text-gray-600 mt-2 tracking-wider">
+            <View className="flex-1 bg-white border border-gray-100 p-5 rounded-2xl shadow-sm shadow-gray-50">
+              <Text className="text-3xl font-black text-black">{draftDocuments.length}</Text>
+              <Text className="text-[10px] font-black uppercase tracking-[1px] mt-1 text-gray-400">
                 Drafts
               </Text>
             </View>
           </View>
 
-          {/* Settings Section */}
-          <Text className="text-xs font-bold uppercase tracking-widest text-gray-600 mb-4 ml-1">
-            Settings & Tools
+          {/* 4. Drafts Section */}
+          {/* Removed - now in settings button */}
+
+          {/* 6. Settings */}
+          <Text className="text-[10px] font-black uppercase tracking-[3px] mb-6 ml-1 text-gray-400">
+            Settings
           </Text>
 
-          <View className="border border-gray-200 rounded-lg overflow-hidden mb-6">
+          <View className="bg-white border border-gray-100 rounded-2xl shadow-sm shadow-gray-50 overflow-hidden">
             {[
-              { name: "Security", icon: "shield" },
-              { name: "Preferences", icon: "sliders" },
-              { name: "Sync Status", icon: "refresh-cw" },
+              { n: "Security Protocols", i: "shield" },
+              { n: "Hub Preferences", i: "sliders" },
+              { n: "Sync Status", i: "refresh-cw" },
             ].map((item, i, arr) => (
               <TouchableOpacity
-                key={item.name}
-                className={`flex-row items-center justify-between px-6 py-4 ${
-                  i !== arr.length - 1 ? "border-b border-gray-200" : ""
-                }`}
+                key={item.n}
+                className={`flex-row items-center justify-between p-5 ${i !== arr.length - 1 ? "border-b border-gray-50" : ""}`}
               >
-                <View className="flex-row items-center gap-4">
-                  <Feather name={item.icon as any} size={18} color="black" />
-                  <Text className="text-base font-semibold text-black">
-                    {item.name}
+                <View className="flex-row items-center">
+                  <Feather name={item.i as any} size={18} color="black" />
+                  <Text className="ml-4 text-sm font-bold text-black uppercase tracking-[0.5px]">
+                    {item.n}
                   </Text>
                 </View>
                 <Feather name="chevron-right" size={18} color="#D1D5DB" />
               </TouchableOpacity>
             ))}
-
-            {!isViewer && (
-              <TouchableOpacity
-                onPress={() => router.push("/(user)/drafts")}
-                className="flex-row items-center justify-between px-6 py-4 border-t border-gray-200"
-              >
-                <View className="flex-row items-center gap-4">
-                  <Feather name="file-text" size={18} color="black" />
-                  <Text className="text-base font-semibold text-black">
-                    My Drafts
+            <TouchableOpacity
+              onPress={() => router.push("/(user)/drafts")}
+              className="flex-row items-center justify-between p-5 border-t border-gray-50"
+            >
+              <View className="flex-row items-center">
+                <Feather name="file-text" size={18} color="black" />
+                <Text className="ml-4 text-sm font-bold text-black uppercase tracking-[0.5px]">
+                  My Drafts
+                </Text>
+              </View>
+              <View className="flex-row items-center gap-2">
+                <View className="bg-yellow-100 px-2.5 py-1 rounded-full">
+                  <Text className="text-[10px] font-black text-yellow-700">
+                    {draftDocuments.length}
                   </Text>
                 </View>
-                <View className="flex-row items-center gap-2">
-                  <View className="bg-gray-200 px-3 py-1.5 rounded-full">
-                    <Text className="text-xs font-bold text-black">
-                      {draftDocuments.length}
-                    </Text>
-                  </View>
-                  <Feather name="chevron-right" size={18} color="#D1D5DB" />
-                </View>
-              </TouchableOpacity>
-            )}
+                <Feather name="chevron-right" size={18} color="#D1D5DB" />
+              </View>
+            </TouchableOpacity>
           </View>
 
-          {/* Logout Button */}
+            {/* 7. Log Out - Normal Radius */}
           <TouchableOpacity
             onPress={async () => {
               await AsyncStorage.clear();
-              router.replace("/(auth)/login");
+              router.replace("/(public)");
             }}
             activeOpacity={0.8}
-            className="bg-black h-14 rounded-lg items-center justify-center flex-row gap-2"
+            className="mt-12 bg-black h-14 rounded-2xl items-center justify-center shadow-lg shadow-gray-200"
           >
-            <Feather name="log-out" size={18} color="white" />
-            <Text className="text-white font-bold text-base">
-              Log Out
+            <Text className="text-white font-black uppercase tracking-[2px] text-xs">
+              Log out
             </Text>
           </TouchableOpacity>
         </View>

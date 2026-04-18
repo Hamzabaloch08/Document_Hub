@@ -125,7 +125,11 @@ export default function WorkspacesListScreen() {
       setWsVisibility("private");
       setShowCreateBox(false);
     } else if (createWorkspace.rejected.match(result)) {
-      Alert.alert("Error", result.payload?.message || "Failed to create workspace. Please try again.");
+      Alert.alert(
+        "Error",
+        result.payload?.message ||
+          "Failed to create workspace. Please try again.",
+      );
     }
   };
 
@@ -155,22 +159,13 @@ export default function WorkspacesListScreen() {
       <View className="px-6 py-8 border-b border-gray-50 flex-row justify-between items-center">
         <View>
           <Text className="text-[12px] font-black text-gray-300 uppercase tracking-[3px] mb-1">
-            {isAdmin ? "Admin Root" : "My Hubs"}
+            Workspaces
           </Text>
           <Text className="text-4xl font-black tracking-tighter text-black">
             Spaces.
           </Text>
         </View>
         <View className="flex-row items-center gap-4">
-          <View
-            className={`px-4 py-1.5 rounded-full ${isAdmin ? "bg-black" : "bg-gray-100"}`}
-          >
-            <Text
-              className={`text-[10px] font-black uppercase tracking-widest ${isAdmin ? "text-white" : "text-gray-500"}`}
-            >
-              {currentRole}
-            </Text>
-          </View>
           {isAdmin && (
             <TouchableOpacity
               className="w-12 h-12 bg-black rounded-2xl items-center justify-center"
@@ -211,6 +206,48 @@ export default function WorkspacesListScreen() {
                 className="bg-white border border-gray-100 rounded-2xl px-5 py-4 text-black font-bold mb-6"
                 style={{ minHeight: 80 }}
               />
+
+              {/* ── Visibility Toggle ── */}
+              <Text className="text-[10px] font-black text-black uppercase tracking-widest mb-3">
+                Privacy Setting
+              </Text>
+              <View className="flex-row gap-3 mb-6">
+                <TouchableOpacity
+                  onPress={() => setWsVisibility("private")}
+                  className={`flex-1 py-3 px-4 rounded-xl border-2 items-center ${
+                    wsVisibility === "private"
+                      ? "bg-black border-black"
+                      : "bg-white border-gray-100"
+                  }`}
+                >
+                  <Text
+                    className={`font-black uppercase tracking-widest text-[11px] ${
+                      wsVisibility === "private"
+                        ? "text-white"
+                        : "text-gray-400"
+                    }`}
+                  >
+                    Private
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setWsVisibility("public")}
+                  className={`flex-1 py-3 px-4 rounded-xl border-2 items-center ${
+                    wsVisibility === "public"
+                      ? "bg-black border-black"
+                      : "bg-white border-gray-100"
+                  }`}
+                >
+                  <Text
+                    className={`font-black uppercase tracking-widest text-[11px] ${
+                      wsVisibility === "public" ? "text-white" : "text-gray-400"
+                    }`}
+                  >
+                    Public
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
               <TouchableOpacity
                 onPress={handleCreateWorkspace}
                 disabled={actionLoading}

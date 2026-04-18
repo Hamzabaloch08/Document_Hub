@@ -1,18 +1,20 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 
 export default function SplashScreen() {
-  const [isReady, setIsReady] = useState(false);
-
   useEffect(() => {
+    let isMounted = true;
+
     const bootstrap = async () => {
       try {
         const token = await AsyncStorage.getItem("tokenGenerate");
 
+        if (!isMounted) return;
+
         if (!token) {
-          router.replace("/(auth)/login");
+          router.replace("/(public)");
           return;
         }
 
@@ -21,13 +23,17 @@ export default function SplashScreen() {
         router.replace("/(tabs)");
       } catch (error) {
         console.error("Splash bootstrap error:", error);
-        router.replace("/(auth)/login");
-      } finally {
-        setIsReady(true);
+        if (isMounted) {
+          router.replace("/(public)");
+        }
       }
     };
 
     bootstrap();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (
@@ -50,7 +56,9 @@ export default function SplashScreen() {
           marginBottom: 20,
         }}
       >
-        <Text style={{ color: "#fff", fontSize: 22, fontWeight: "900" }}>D</Text>
+        <Text style={{ color: "#fff", fontSize: 22, fontWeight: "900" }}>
+          D
+        </Text>
       </View>
       <Text
         style={{

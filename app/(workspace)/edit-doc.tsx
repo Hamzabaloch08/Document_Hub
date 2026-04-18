@@ -1,7 +1,7 @@
 import {
     createDocument,
-    updateDocument,
     fetchWorkspaceDocuments,
+    updateDocument,
 } from "@/src/features/document/redux/documentThunks";
 import {
     DocumentItem,
@@ -9,18 +9,20 @@ import {
 } from "@/src/features/document/types/documentTypes";
 import { AppDispatch, RootState } from "@/src/store/store";
 import { Feather } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, { useEffect, useRef, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
+    Keyboard,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
     Text,
     TextInput,
     TouchableOpacity,
+    TouchableWithoutFeedback,
     View,
 } from "react-native";
 import {
@@ -42,28 +44,40 @@ export default function EditDocScreen() {
   }>();
 
   // ALL HOOKS BEFORE ANY CONDITIONALS
-  const [userRole, setUserRole] = useState<"admin" | "editor" | "viewer">("viewer");
+  const [userRole, setUserRole] = useState<"admin" | "editor" | "viewer">(
+    "viewer",
+  );
   const isEditing = !!params.docId;
-  const { actionLoading, workspaceDocuments } = useSelector(
+  const { actionLoading, workspaceDocuments, draftDocuments } = useSelector(
     (s: RootState) => s.document,
   );
   const { workspaces } = useSelector((s: RootState) => s.workspace);
   const [selectedWsId, setSelectedWsId] = useState(params.workspaceId || "");
   const [title, setTitle] = useState(params.title || "");
   const [content, setContent] = useState("");
-  const [visibility, setVisibility] = useState<DocumentVisibility>("private");
+  const [visibility, setVisibility] = useState<DocumentVisibility>("public");
   const [status, setStatus] = useState<"draft" | "published">("draft");
+  const [showLinkBox, setShowLinkBox] = useState(false);
+  const [linkText, setLinkText] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
+  const [originalTitle, setOriginalTitle] = useState("");
+  const [originalContent, setOriginalContent] = useState("");
+  const [originalVisibility, setOriginalVisibility] =
+    useState<DocumentVisibility>("public");
   const editorRef = useRef<RichEditor>(null);
 
   // Derive content from Redux when editing (avoids passing large HTML as a route param)
+  // Check both workspace documents and draft documents
   const existingDoc: DocumentItem | undefined = params.docId
-    ? workspaceDocuments.find((d) => d._id === params.docId)
+    ? workspaceDocuments.find((d) => d._id === params.docId) ||
+      draftDocuments.find((d) => d._id === params.docId)
     : undefined;
 
   // Initialize content from existing doc
   useEffect(() => {
     if (existingDoc?.content) {
       setContent(existingDoc.content);
+      setOriginalContent(existingDoc.content);
     }
   }, [existingDoc?.content]);
 
@@ -71,9 +85,11 @@ export default function EditDocScreen() {
   useEffect(() => {
     if (existingDoc?.visibility) {
       setVisibility(existingDoc.visibility as DocumentVisibility);
+      setOriginalVisibility(existingDoc.visibility as DocumentVisibility);
     }
     if (existingDoc?.title) {
       setTitle(existingDoc.title);
+      setOriginalTitle(existingDoc.title);
     }
     if (existingDoc?.status) {
       setStatus(existingDoc.status as "draft" | "published");
@@ -87,25 +103,49 @@ export default function EditDocScreen() {
         const u = JSON.parse(raw);
         const r = (u?.role || "viewer").toLowerCase();
         if (r === "admin" || r === "editor" || r === "viewer") {
-          setUserRole(r as any);
+          setUserRole(r);
         }
       } catch {}
     });
   }, []);
 
+  const hasPendingChanges = useMemo(() => {
+    if (!isEditing) return true;
+
+    const normalize = (value: string) => value.replace(/\s+/g, " ").trim();
+    return (
+      normalize(title) !== normalize(originalTitle) ||
+      normalize(content) !== normalize(originalContent) ||
+      visibility !== originalVisibility
+    );
+  }, [
+    content,
+    isEditing,
+    originalContent,
+    originalTitle,
+    originalVisibility,
+    title,
+    visibility,
+  ]);
+
   if (userRole === "viewer") {
     return (
       <SafeAreaView className="flex-1 bg-white items-center justify-center">
         <Text className="text-lg font-black text-black">Access Denied</Text>
-        <Text className="text-gray-500 mt-2">Viewers cannot edit documents</Text>
-        <TouchableOpacity onPress={() => nav.back()} className="mt-6 px-6 py-3 bg-black rounded-2xl">
+        <Text className="text-gray-500 mt-2">
+          Viewers cannot edit documents
+        </Text>
+        <TouchableOpacity
+          onPress={() => nav.back()}
+          className="mt-6 px-6 py-3 bg-black rounded-2xl"
+        >
           <Text className="text-white font-bold">Go Back</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
   }
 
-  const handleSave = async () => {
+  const handleSave = async (saveStatus?: "draft" | "published") => {
     const trimmedTitle = title.trim();
     if (!trimmedTitle) {
       Alert.alert("Validation", "Please enter a document title.");
@@ -118,12 +158,27 @@ export default function EditDocScreen() {
       return;
     }
 
+    const finalStatus = saveStatus || status;
+
+    console.log("[SAVE] Document save details:", {
+      title: trimmedTitle,
+      visibility: visibility,
+      status: finalStatus,
+      workspaceId: targetWsId,
+      isEditing: isEditing,
+    });
+
     let result: any;
     if (isEditing && params.docId) {
       result = await dispatch(
         updateDocument({
           id: params.docId,
-          data: { title: trimmedTitle, content, visibility, status },
+          data: {
+            title: trimmedTitle,
+            content,
+            visibility,
+            status: finalStatus,
+          },
         }),
       );
     } else if (targetWsId) {
@@ -133,7 +188,7 @@ export default function EditDocScreen() {
           title: trimmedTitle,
           content,
           visibility,
-          status,
+          status: finalStatus,
         }),
       );
     }
@@ -161,147 +216,244 @@ export default function EditDocScreen() {
     }
   };
 
+  const handleInsertLink = () => {
+    const text = linkText.trim();
+    const rawUrl = linkUrl.trim();
+
+    if (!text || !rawUrl) {
+      Alert.alert("Validation", "Please add link text and URL.");
+      return;
+    }
+
+    const normalizedUrl = /^https?:\/\//i.test(rawUrl)
+      ? rawUrl
+      : `https://${rawUrl}`;
+
+    const editor = editorRef.current as any;
+    if (editor?.insertLink) {
+      editor.insertLink(text, normalizedUrl);
+    } else if (editor?.insertHTML) {
+      editor.insertHTML(`<a href="${normalizedUrl}">${text}</a>`);
+    }
+
+    setLinkText("");
+    setLinkUrl("");
+    setShowLinkBox(false);
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top", "bottom"]}>
       {/* Header */}
       <View className="px-6 py-4 border-b border-gray-50 flex-row items-center justify-between bg-white">
         <View>
-            <Text className="text-[10px] font-black text-gray-300 uppercase tracking-[2px]">
-              {isEditing ? "Modify" : "Compose"}
-            </Text>
-            <Text className="text-xl font-black tracking-tighter text-black">
-              {isEditing ? "Edit Doc." : "New Document."}
-            </Text>
-          </View>
+          <Text className="text-[10px] font-black text-gray-300 uppercase tracking-[2px]">
+            {isEditing ? "Modify" : "Compose"}
+          </Text>
+          <Text className="text-xl font-black tracking-tighter text-black">
+            {isEditing ? "Edit Doc." : "New Document."}
+          </Text>
+        </View>
       </View>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
       >
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-          <View className="px-6 py-6 pb-20">
-            {/* Workspace Selector (only when creating without workspace context) */}
-            {!isEditing && !params.workspaceId && (
-              <>
-                <Text className="text-[10px] font-black text-gray-400 uppercase tracking-[1.5px] mb-3 ml-1">
-                  Destination Workspace
-                </Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  className="mb-8"
-                >
-                  {workspaces.map((ws) => (
-                    <TouchableOpacity
-                      key={ws._id}
-                      onPress={() => setSelectedWsId(ws._id)}
-                      className={`mr-3 px-4 py-2.5 rounded-2xl border ${
-                        selectedWsId === ws._id
-                          ? "bg-black border-black"
-                          : "bg-white border-gray-100"
-                      }`}
-                    >
-                      <Text
-                        className={`text-[10px] font-black uppercase tracking-[1px] ${
-                          selectedWsId === ws._id ? "text-white" : "text-black"
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView
+            className="flex-1"
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View className="px-6 py-6 pb-20">
+              {/* Workspace Selector (only when creating without workspace context) */}
+              {!isEditing && !params.workspaceId && (
+                <>
+                  <Text className="text-[10px] font-black text-gray-400 uppercase tracking-[1.5px] mb-3 ml-1">
+                    Destination Workspace
+                  </Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    className="mb-8"
+                  >
+                    {workspaces.map((ws) => (
+                      <TouchableOpacity
+                        key={ws._id}
+                        onPress={() => setSelectedWsId(ws._id)}
+                        className={`mr-3 px-4 py-2.5 rounded-2xl border ${
+                          selectedWsId === ws._id
+                            ? "bg-black border-black"
+                            : "bg-white border-gray-100"
                         }`}
                       >
-                        {ws.name}
+                        <Text
+                          className={`text-[10px] font-black uppercase tracking-[1px] ${
+                            selectedWsId === ws._id
+                              ? "text-white"
+                              : "text-black"
+                          }`}
+                        >
+                          {ws.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                    {workspaces.length === 0 && (
+                      <Text className="text-xs font-bold text-gray-300 italic">
+                        No workspaces available
                       </Text>
-                    </TouchableOpacity>
-                  ))}
-                  {workspaces.length === 0 && (
-                    <Text className="text-xs font-bold text-gray-300 italic">
-                      No workspaces available
-                    </Text>
-                  )}
-                </ScrollView>
-              </>
-            )}
+                    )}
+                  </ScrollView>
+                </>
+              )}
 
-            {/* Title Input */}
-            <Text className="text-[10px] font-black text-gray-400 uppercase tracking-[1.5px] mb-3 ml-1">
-              Document Title
-            </Text>
-            <TextInput
-              value={title}
-              onChangeText={setTitle}
-              placeholder="Enter title here..."
-              placeholderTextColor="#CBD5E1"
-              className="text-2xl font-black text-black mb-8 p-0"
-              multiline
-            />
+              {/* Title Input */}
+              <Text className="text-[10px] font-black text-gray-400 uppercase tracking-[1.5px] mb-3 ml-1">
+                Document Title
+              </Text>
+              <TextInput
+                value={title}
+                onChangeText={setTitle}
+                placeholder="Enter title here..."
+                placeholderTextColor="#CBD5E1"
+                className="text-2xl font-black text-black mb-8 p-0"
+                multiline
+              />
 
-            {/* Visibility Toggle */}
-            <Text className="text-[10px] font-black text-gray-400 uppercase tracking-[1.5px] mb-3 ml-1">
-              Visibility Settings
-            </Text>
-            <View className="flex-row gap-3 mb-8">
-              {(["private", "public"] as DocumentVisibility[]).map((v) => (
-                <TouchableOpacity
-                  key={v}
-                  onPress={() => setVisibility(v)}
-                  className={`flex-1 py-3.5 rounded-2xl border items-center ${
-                    visibility === v
-                      ? "bg-black border-black"
-                      : "bg-white border-gray-200"
-                  }`}
-                >
-                  <Text
-                    className={`text-[10px] font-black uppercase tracking-[1px] ${
-                      visibility === v ? "text-white" : "text-black"
+              {/* Visibility Toggle */}
+              <Text className="text-[10px] font-black text-gray-400 uppercase tracking-[1.5px] mb-3 ml-1">
+                Visibility Settings
+              </Text>
+              <View className="flex-row gap-3 mb-8">
+                {(["private", "public"] as DocumentVisibility[]).map((v) => (
+                  <TouchableOpacity
+                    key={v}
+                    onPress={() => setVisibility(v)}
+                    className={`flex-1 py-3.5 rounded-2xl border items-center ${
+                      visibility === v
+                        ? "bg-black border-black"
+                        : "bg-white border-gray-200"
                     }`}
                   >
-                    {v}
+                    <Text
+                      className={`text-[10px] font-black uppercase tracking-[1px] ${
+                        visibility === v ? "text-white" : "text-black"
+                      }`}
+                    >
+                      {v}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Editing: Show Status Toggle */}
+              {/* Editor Toolbar */}
+              <View className="flex-row items-center justify-between mb-3">
+                <Text className="text-[10px] font-black text-gray-400 uppercase tracking-[1.5px] ml-1">
+                  Content Editor
+                </Text>
+                <TouchableOpacity
+                  onPress={() => setShowLinkBox((prev) => !prev)}
+                  className="px-3 py-2 rounded-xl bg-gray-100 border border-gray-200 flex-row items-center gap-2"
+                >
+                  <Feather name="link" size={14} color="#111827" />
+                  <Text className="text-[10px] font-black text-gray-700 uppercase">
+                    Add URL
                   </Text>
                 </TouchableOpacity>
-              ))}
-            </View>
+              </View>
 
-            {/* Editing: Show Status Toggle */}
-            {/* Editor Toolbar */}
-            <Text className="text-[10px] font-black text-gray-400 uppercase tracking-[1.5px] mb-3 ml-1">
-              Content Editor
-            </Text>
-            <View className="border border-gray-100 rounded-3xl overflow-hidden bg-white shadow-sm">
-              <RichToolbar
-                editor={editorRef}
-                actions={[
-                  actions.setBold,
-                  actions.setItalic,
-                  actions.setUnderline,
-                  actions.heading1,
-                  actions.insertBulletsList,
-                  actions.insertOrderedList,
-                  actions.blockquote,
-                  actions.code,
-                  actions.undo,
-                  actions.redo,
-                ]}
-                style={{
-                  backgroundColor: "#F8FAFC",
-                  borderBottomWidth: 1,
-                  borderColor: "#F1F5F9",
-                }}
-              />
-              <RichEditor
-                ref={editorRef}
-                initialContentHTML={content}
-                placeholder="Start writing something amazing..."
-                onChange={setContent}
-                style={{ minHeight: 400 }}
-                editorStyle={{
-                  backgroundColor: "#FFFFFF",
-                  contentCSSText:
-                    "font-size: 16px; min-height: 400px; padding: 20px;",
-                }}
-                useContainer={true}
-                startZoomSupportWebView={false}
-              />
+              {showLinkBox && (
+                <View className="mb-4 bg-gray-50 border border-gray-100 rounded-2xl p-4">
+                  <Text className="text-[10px] font-black text-gray-500 uppercase tracking-[1px] mb-2">
+                    Link Text
+                  </Text>
+                  <TextInput
+                    value={linkText}
+                    onChangeText={setLinkText}
+                    placeholder="e.g. Open API Docs"
+                    placeholderTextColor="#94A3B8"
+                    className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-black font-semibold mb-3"
+                  />
+
+                  <Text className="text-[10px] font-black text-gray-500 uppercase tracking-[1px] mb-2">
+                    URL
+                  </Text>
+                  <TextInput
+                    value={linkUrl}
+                    onChangeText={setLinkUrl}
+                    placeholder="https://example.com"
+                    placeholderTextColor="#94A3B8"
+                    autoCapitalize="none"
+                    keyboardType="url"
+                    className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-black font-semibold"
+                  />
+
+                  <View className="flex-row gap-2 mt-3">
+                    <TouchableOpacity
+                      onPress={() => {
+                        setShowLinkBox(false);
+                        setLinkText("");
+                        setLinkUrl("");
+                      }}
+                      className="flex-1 py-3 rounded-xl bg-white border border-gray-200 items-center"
+                    >
+                      <Text className="text-[10px] font-black text-gray-700 uppercase">
+                        Cancel
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={handleInsertLink}
+                      className="flex-1 py-3 rounded-xl bg-black items-center"
+                    >
+                      <Text className="text-[10px] font-black text-white uppercase">
+                        Insert Link
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+
+              <View className="border border-gray-100 rounded-3xl overflow-hidden bg-white shadow-sm">
+                <RichToolbar
+                  editor={editorRef}
+                  actions={[
+                    actions.setBold,
+                    actions.setItalic,
+                    actions.setUnderline,
+                    actions.insertLink,
+                    actions.heading1,
+                    actions.insertBulletsList,
+                    actions.insertOrderedList,
+                    actions.blockquote,
+                    actions.code,
+                    actions.undo,
+                    actions.redo,
+                  ]}
+                  style={{
+                    backgroundColor: "#F8FAFC",
+                    borderBottomWidth: 1,
+                    borderColor: "#F1F5F9",
+                  }}
+                />
+                <RichEditor
+                  ref={editorRef}
+                  initialContentHTML={content}
+                  placeholder="Start writing something amazing..."
+                  onChange={setContent}
+                  style={{ minHeight: 400 }}
+                  editorStyle={{
+                    backgroundColor: "#FFFFFF",
+                    contentCSSText:
+                      "font-size: 16px; min-height: 400px; padding: 20px;",
+                  }}
+                  useContainer={true}
+                  startZoomSupportWebView={false}
+                />
+              </View>
             </View>
-          </View>
-        </ScrollView>
+          </ScrollView>
+        </TouchableWithoutFeedback>
 
         {/* Dual Save Buttons at Bottom */}
         <View className="px-6 py-4 border-t border-gray-50 bg-white flex-row gap-3">
@@ -312,47 +464,49 @@ export default function EditDocScreen() {
             <Feather name="x" size={20} color="black" />
           </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={async () => {
-              setStatus("draft");
-              await handleSave();
-            }}
-            disabled={actionLoading}
-            className={`flex-1 py-3 rounded-2xl items-center flex-row gap-2 border-2 ${
-              actionLoading
-                ? "bg-gray-100 border-gray-200"
-                : "bg-white border-gray-200"
-            }`}
-          >
-            {actionLoading ? (
-              <ActivityIndicator color="#000" size="small" />
-            ) : (
-              <>
-                <Feather name="save" size={16} color="black" />
-                <Text className="text-black font-black uppercase tracking-[1px] text-xs">
-                  Draft
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
+          {!isEditing && (
+            <TouchableOpacity
+              onPress={() => handleSave("draft")}
+              disabled={actionLoading}
+              className={`flex-1 py-3 rounded-2xl items-center justify-center flex-row gap-2 border-2 ${
+                actionLoading
+                  ? "bg-gray-100 border-gray-200"
+                  : "bg-white border-gray-200"
+              }`}
+            >
+              {actionLoading ? (
+                <ActivityIndicator color="#000" size="small" />
+              ) : (
+                <>
+                  <Feather name="save" size={16} color="black" />
+                  <Text className="text-black font-black uppercase tracking-[1px] text-xs">
+                    Draft
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity
-            onPress={async () => {
-              setStatus("published");
-              await handleSave();
-            }}
-            disabled={actionLoading}
-            className={`flex-1 py-3 rounded-2xl items-center flex-row gap-2 ${
-              actionLoading ? "bg-gray-300" : "bg-black"
+            onPress={() => (isEditing ? handleSave() : handleSave("published"))}
+            disabled={actionLoading || (isEditing && !hasPendingChanges)}
+            className={`flex-1 py-3 rounded-2xl items-center justify-center flex-row gap-2 ${
+              actionLoading || (isEditing && !hasPendingChanges)
+                ? "bg-gray-300"
+                : "bg-black"
             }`}
           >
             {actionLoading ? (
               <ActivityIndicator color="#fff" size="small" />
             ) : (
               <>
-                <Feather name="send" size={16} color="white" />
+                <Feather
+                  name={isEditing ? "check-circle" : "send"}
+                  size={16}
+                  color="white"
+                />
                 <Text className="text-white font-black uppercase tracking-[1px] text-xs">
-                  Publish
+                  {isEditing ? "Update" : "Publish"}
                 </Text>
               </>
             )}

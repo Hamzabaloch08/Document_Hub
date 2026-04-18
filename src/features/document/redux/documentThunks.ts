@@ -14,9 +14,20 @@ const getErrorMessage = (error: any, fallback: string): string => {
   const data = error?.response?.data;
   if (typeof data === "string") {
     const trimmed = data.replace(/\s+/g, " ").trim();
-    if (trimmed) return trimmed;
+    if (trimmed) {
+      const looksLikeHtml = /<!doctype html>|<html[\s>]/i.test(trimmed);
+      if (!looksLikeHtml) return trimmed;
+    }
   }
-  return data?.message || data?.error || error?.message || fallback;
+
+  const responseMessage = data?.message || data?.error;
+  if (responseMessage) return responseMessage;
+
+  if (error?.response?.status) {
+    return `Backend request failed (${error.response.status}). Please check the server.`;
+  }
+
+  return error?.message || fallback;
 };
 
 const pickDocuments = (data: any): DocumentItem[] => {
@@ -52,8 +63,17 @@ export const fetchWorkspaceDocuments = createAsyncThunk<
   "document/fetchWorkspaceDocuments",
   async (workspaceId, { rejectWithValue }) => {
     try {
-      const response = await api.get(`/api/documents/${workspaceId}`);
-      return pickDocuments(response.data);
+      const response = await api.get(
+        `/api/documents/${workspaceId}?status=published`,
+      );
+      const docs = pickDocuments(response.data);
+      console.log("[DEBUG] Fetched workspace documents:", docs);
+      docs.forEach((doc) => {
+        console.log(
+          `[DEBUG] Doc "${doc.title}" - status: ${doc.status}, visibility: ${doc.visibility}`,
+        );
+      });
+      return docs;
     } catch (error: any) {
       return rejectWithValue(
         getErrorMessage(error, "Failed to fetch workspace documents"),
@@ -74,10 +94,20 @@ export const createDocument = createAsyncThunk<
       "/api/documents",
       payload,
     );
-    console.log("[DEBUG] Document created, response:", response.data);
+    console.log(
+      "[DEBUG] Document created, full response:",
+      JSON.stringify(response.data, null, 2),
+    );
     const document = pickSingleDocument(response.data);
     if (!document?._id) throw new Error("Invalid create document response");
-    console.log("[DEBUG] Parsed document visibility:", document?.visibility);
+    console.log(
+      "[DEBUG] Parsed document - title:",
+      document.title,
+      "status:",
+      document.status,
+      "visibility:",
+      document.visibility,
+    );
     return document;
   } catch (error: any) {
     console.error(
@@ -95,14 +125,29 @@ export const updateDocument = createAsyncThunk<
   { rejectValue: string }
 >("document/updateDocument", async ({ id, data }, { rejectWithValue }) => {
   try {
+    console.log("[DEBUG] Updating document with id:", id, "data:", data);
     const response = await api.put<DocumentResponse | any>(
       `/api/documents/${id}`,
       data,
     );
+    console.log(
+      "[DEBUG] Document updated, full response:",
+      JSON.stringify(response.data, null, 2),
+    );
     const document = pickSingleDocument(response.data);
     if (!document?._id) throw new Error("Invalid update document response");
+    console.log(
+      "[DEBUG] Parsed updated document - title:",
+      document.title,
+      "status:",
+      document.status,
+    );
     return document;
   } catch (error: any) {
+    console.error(
+      "[DEBUG] Update document error:",
+      error?.response?.data || error?.message,
+    );
     return rejectWithValue(getErrorMessage(error, "Failed to update document"));
   }
 });
@@ -118,6 +163,37 @@ export const deleteDocument = createAsyncThunk<
     return { id, message: response.data?.message || "Document deleted" };
   } catch (error: any) {
     return rejectWithValue(getErrorMessage(error, "Failed to delete document"));
+  }
+});
+
+// ─── Fetch Draft Documents ────────────────────────────────────────────────────
+export const fetchDraftDocuments = createAsyncThunk<
+  DocumentItem[],
+  void,
+  { rejectValue: string }
+>("document/fetchDraftDocuments", async (_, { rejectWithValue }) => {
+  try {
+    const role = await getRoleFromStorage();
+    // Get all documents and filter by status=draft locally
+    const endpoint =
+      role === "admin" ? "/api/documents/admin/all" : "/api/documents/public";
+    const response = await api.get(endpoint);
+    const docs = pickDocuments(response.data);
+
+    // Filter by draft status
+    const drafts = docs.filter((doc) => doc.status === "draft");
+
+    console.log("[DEBUG] Fetched draft documents:", drafts);
+    drafts.forEach((doc) => {
+      console.log(
+        `[DEBUG] Draft "${doc.title}" - content length: ${doc.content?.length || 0}, has content: ${!!doc.content}`,
+      );
+    });
+    return drafts;
+  } catch (error: any) {
+    return rejectWithValue(
+      getErrorMessage(error, "Failed to fetch draft documents"),
+    );
   }
 });
 
